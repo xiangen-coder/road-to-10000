@@ -115,9 +115,10 @@
   color: #bce4f5;
   font-size: 0.85rem;
 }
-.research-shadow-note small { display: block; }
-.research-shadow-note .shadow-present { color: #92e6b3; }
-.research-shadow-note .shadow-absent { color: #ffaaaa; }
+.research-shadow-note small { display: block; color: inherit; }
+.research-shadow-note.shadow-unavailable { color: #FCA5A5; }
+.research-shadow-note.shadow-zero { color: #FCD34D; }
+.research-shadow-note.shadow-positive { color: #86EFAC; }
 .research-centre-summary {
   font-weight: 700;
   display: flex;

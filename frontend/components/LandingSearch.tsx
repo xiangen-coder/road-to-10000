@@ -54,15 +54,20 @@ export default function LandingSearch({
   const atlas = useRef<LandingAtlasHandle>(null);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
-  const [shadow, setShadow] = useState<{ key: string; fraction: number | null; coverage: number }>();
+  const [shadow, setShadow] = useState<{ key: string; fraction: number | null }>();
   const { latitude, longitude } = selected;
   const validCentre = Number.isFinite(latitude) && Math.abs(latitude) <= 90 &&
     Number.isFinite(longitude) && Math.abs(longitude) <= 180;
   const validArea = validCentre && radiusKm >= 0.25 && radiusKm <= 20;
   const shadowKey = JSON.stringify([latitude, longitude, radiusKm]);
-  const shadowFraction = validArea && shadow?.key === shadowKey ? shadow.fraction : null;
-  const shadowPercent = shadowFraction == null ? null
-    : shadowFraction > 0 && shadowFraction < 0.0005 ? "<0.1%" : `${(shadowFraction * 100).toFixed(1)}%`;
+  const shadowResult = validArea && shadow?.key === shadowKey ? shadow : undefined;
+  const shadowFraction = shadowResult?.fraction ?? null;
+  const shadowState = shadowFraction == null ? "unavailable" : shadowFraction === 0 ? "zero" : "positive";
+  const shadowMessage = {
+    unavailable: "No mapped data is available here, so this indicator cannot assess water-ice potential.",
+    zero: "No permanent shadow is mapped here. This does not rule out the presence of water ice.",
+    positive: "Permanent shadow may help preserve water ice, but does not confirm its presence.",
+  }[shadowState];
   useEffect(() => {
     if (priority !== "I" || !validArea) return;
     const controller = new AbortController();
@@ -74,9 +79,12 @@ export default function LandingSearch({
         const response = await fetch(`/api/research/research-area-shadow?${query}`, { signal: controller.signal });
         if (!response.ok) throw Error("Shadow data unavailable");
         const data = await response.json();
-        if (!controller.signal.aborted) setShadow({ key: shadowKey, fraction: data.shadow_fraction, coverage: data.coverage_fraction });
+        const fraction = data?.shadow_fraction;
+        if (!controller.signal.aborted) {
+          setShadow({ key: shadowKey, fraction: typeof fraction === "number" && fraction >= 0 && fraction <= 1 ? fraction : null });
+        }
       } catch {
-        if (!controller.signal.aborted) setShadow({ key: shadowKey, fraction: null, coverage: 0 });
+        if (!controller.signal.aborted) setShadow({ key: shadowKey, fraction: null });
       }
     }, 300);
     return () => { window.clearTimeout(timer); controller.abort(); };
@@ -280,20 +288,12 @@ export default function LandingSearch({
           </button>
           {!validCentre && <p className="research-shadow-note">Choose a point on the map, enter latitude and longitude, or select a preset to search.</p>}
           {priority === "I" && (
-            <p className="research-shadow-note" role="status">
-              {!validArea ? "Enter a valid research area" :
-              shadow?.key !== shadowKey ? "Checking mapped permanent shadow…" :
-                shadow.fraction == null ? <span className="shadow-absent">Mapped permanent shadow unavailable</span> :
-                `${shadowPercent} mapped permanent shadow within ${radiusKm} km`}
-              {shadowFraction != null && (
-                <small className={shadowFraction > 0 ? "shadow-present" : "shadow-absent"}>
-                  {shadowFraction > 0
-                    ? "Permanent shadow may preserve water ice, whose presence remains unconfirmed."
-                    : "The mapped area has no permanent shadow, so this indicator gives no evidence of water ice."}
-                </small>
-              )}
-              {shadow?.key === shadowKey && shadow.fraction != null && shadow.coverage < 0.9999 && (
-                <small>Share of mapped ground · {(100 * shadow.coverage).toFixed(2)}% of the circle mapped</small>
+            <p className={`research-shadow-note${shadowResult ? ` shadow-${shadowState}` : ""}`} role="status">
+              {!validArea ? "Enter a valid research area" : !shadowResult ? "Checking mapped permanent shadow…" : (
+                <>
+                  Mapped permanent shadow within {radiusKm} km: {shadowFraction == null ? "Unavailable" : `${(shadowFraction * 100).toFixed(1)}%`}
+                  <small>{shadowMessage}</small>
+                </>
               )}
             </p>
           )}

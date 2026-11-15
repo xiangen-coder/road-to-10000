@@ -196,12 +196,27 @@ test("Configure offers three references and carries a custom map point back", as
   await expect(form.getByLabel("Custom location name")).toHaveValue("Custom location");
   await expect(form.getByRole("spinbutton", { name: "Longitude" })).not.toHaveValue("-137.489552922");
   const longitude = Number(await form.getByRole("spinbutton", { name: "Longitude" }).inputValue());
-  await page.route("**/api/research/research-area-shadow?*", (route) => route.fulfill({
-    json: { shadow_fraction: 0.125, coverage_fraction: 0.75 },
-  }));
+  await page.route("**/api/research/research-area-shadow?*", (route) => {
+    const radius = new URL(route.request().url()).searchParams.get("radius_m");
+    const fraction = radius === "5000" ? null : radius === "10000" ? 0 : radius === "15000" ? 0.0001 : 0.125;
+    return route.fulfill({ json: { shadow_fraction: fraction, coverage_fraction: fraction == null ? 0 : 0.75 } });
+  });
   await form.getByRole("combobox", { name: "Research focus" }).selectOption("I");
-  await expect(form.getByText("12.5% mapped permanent shadow within 20 km")).toBeVisible();
-  await expect(form.getByText(/75.00% of the circle mapped/)).toBeVisible();
+  const radiusInput = form.getByRole("spinbutton", { name: "Search radius (km)" });
+  const shadow = form.locator('.research-shadow-note[role="status"]');
+  const cases = [
+    ["5", "Unavailable", "No mapped data is available here, so this indicator cannot assess water-ice potential.", "rgb(252, 165, 165)"],
+    ["10", "0.0%", "No permanent shadow is mapped here. This does not rule out the presence of water ice.", "rgb(252, 211, 77)"],
+    ["15", "0.0%", "Permanent shadow may help preserve water ice, but does not confirm its presence.", "rgb(134, 239, 172)"],
+    ["20", "12.5%", "Permanent shadow may help preserve water ice, but does not confirm its presence.", "rgb(134, 239, 172)"],
+  ];
+  for (const [radius, percentage, reason, color] of cases) {
+    await radiusInput.fill(radius);
+    await expect(shadow).toContainText(`Mapped permanent shadow within ${radius} km: ${percentage}`);
+    await expect(shadow).toHaveCSS("color", color);
+    await expect(shadow.locator("small")).toHaveText(reason);
+    await expect(shadow.locator("small")).toHaveCSS("color", color);
+  }
   await page.route("**/api/research/research-area", (route) => route.fulfill({ json: {
     results: [], sampled: 17, counts: { evaluated: 0, limits: 0, missing: 17, unavailable: 0, focus_missing: 0 }, reasons: [],
   } }));
