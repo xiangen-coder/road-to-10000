@@ -667,9 +667,28 @@
 }
 .result-title-details { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .result-title-actions { display: grid; justify-items: end; gap: 8px; }
+.compared-assessments {
+  display: grid;
+  gap: 4px;
+  width: min(22rem, 46vw);
+  color: #c5d4e8;
+  font-size: .875rem;
+}
+.compared-assessments select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 12px;
+  text-overflow: ellipsis;
+  color: #eef4ff;
+  background: #14223a;
+  border: 1px solid #8eb5d2;
+  border-radius: 999px;
+}
 @media (max-width: 600px) {
   .research-results-heading { grid-template-columns: minmax(0, 1fr); }
   .result-title-actions { justify-self: end; }
+  .compared-assessments { width: min(22rem, 82vw); }
 }
 
 .comparison-report {

@@ -24,7 +24,7 @@ import EnergyOnlyCharts from "./mission-lab/EnergyOnlyCharts";
 import EquipmentControls from "./mission-lab/EquipmentControls";
 import { solarEnergy, type SolarSettings } from "./mission-lab/scenario-science";
 import type { Site } from "../app/types";
-import { horizonLabel } from "../lib/plan-b";
+import { horizonLabel, missionKey } from "../lib/plan-b";
 import { formatCoordinates } from "../lib/format-coordinates";
 import { quickMapSiteUrl } from "../lib/quickmap";
 import {
@@ -88,6 +88,8 @@ function openResultSection(id: string) {
 }
 export default function ResearchOverview({
   result,
+  comparedAssessments,
+  onSelectAssessment,
   comparisonOrigin,
   assessedAreaCentre,
   comparisonRadiusKm,
@@ -106,6 +108,8 @@ export default function ResearchOverview({
   busy = false,
 }: {
   result: Research | null;
+  comparedAssessments: Research[];
+  onSelectAssessment: (assessment: Research) => void;
   comparisonOrigin: Site;
   assessedAreaCentre?: Site;
   comparisonRadiusKm?: number;
@@ -124,6 +128,7 @@ export default function ResearchOverview({
   busy?: boolean;
 }) {
   const rows = result?.geometry.available ? (result.geometry.series ?? []) : [];
+  const comparedKey = result && missionKey(result.mission);
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [step, setStep] = useState(1);
@@ -239,6 +244,32 @@ export default function ResearchOverview({
             <a className="button subtle" href={quickMapSiteUrl(result.mission)} target="_blank" rel="noreferrer">
               View site in LROC QuickMap <ArrowUpRight size={14} aria-hidden="true" />
             </a>
+          )}
+          {comparedAssessments.length > 1 &&
+            comparedAssessments.some(({ mission }) => missionKey(mission) === comparedKey) && (
+            <div className="compared-assessments">
+              <label htmlFor="compared-assessments">Compared sites</label>
+              <select
+                id="compared-assessments"
+                value={comparedKey ?? ""}
+                onChange={(event) => {
+                  const assessment = comparedAssessments.find(({ mission }) => missionKey(mission) === event.target.value);
+                  if (assessment) onSelectAssessment(assessment);
+                }}
+              >
+                {comparedAssessments.map(({ mission }) => {
+                  const duplicates = comparedAssessments.some(({ mission: other }) =>
+                    other !== mission && other.name === mission.name &&
+                    other.latitude === mission.latitude && other.longitude === mission.longitude);
+                  return (
+                    <option key={missionKey(mission)} value={missionKey(mission)}>
+                      {mission.name.trim() || "Custom location"} · {formatCoordinates(mission.latitude, mission.longitude)}
+                      {duplicates && ` · ${utc(mission.start)}`}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           )}
         </div>
       </header>

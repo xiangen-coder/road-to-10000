@@ -16,7 +16,7 @@ import ResearchOverview from "../components/ResearchOverview";
 import { PortableEducation, PortableJourney } from "../components/PortableLunar";
 import PreliminaryComparison from "../components/PreliminaryComparison";
 import ComparisonPicker, { inComparisonArea, siteKey } from "../components/ComparisonPicker";
-import type { ResearchArea, ResearchAreaResult } from "../lib/research-area";
+import { comparisonEntries, type ResearchArea, type ResearchAreaResult } from "../lib/research-area";
 import { accountApi, AccountApiError } from "../lib/account-api";
 import type { MissionSnapshot } from "../lib/saved-mission";
 import type { SearchRecord } from "../lib/search-record";
@@ -511,6 +511,7 @@ export default function Page() {
   const [researchPriority,setResearchPriority] = useState<ResearchPriority>("overall");
   const [researchBusy,setResearchBusy] = useState(false);
   const [researchResult,setResearchResult] = useState<Research|null>(null);
+  const focusComparedSites = useRef(false);
   const [researchEquipment, setResearchEquipment] = useState(defaultSolar);
   const [reportSite, setReportSite] = useState("");
   const [researchComparison,setResearchComparison]=useState<ResearchComparison|null>(null);
@@ -655,6 +656,7 @@ export default function Page() {
     setAreaFailures({});
     setAreaAssessing(false);
     setResearchResult(null);
+    setOpenSavedLabReport(false);
   }, [selected, start, end, startTime, endTime, interval, clearance, radiusKm, researchPriority]);
   useEffect(() => () => areaRequest.current?.abort(), []);
   useEffect(() => {
@@ -714,6 +716,7 @@ export default function Page() {
     setWhatIfComparison(null);
     setComparisonNotice("");
     setResearchResult(null);
+    setOpenSavedLabReport(false);
     setView(11);
     try {
       const response = await fetch("/api/research/research-area", {
@@ -724,7 +727,6 @@ export default function Page() {
       const result: ResearchAreaResult = await response.json();
       if (controller.signal.aborted) return;
       setAreaSearch({ area, result, busy: false, error: "" });
-      setResearchResult(result.results[0] ?? null);
     } catch (error) {
       if (!controller.signal.aborted) setAreaSearch({ area, busy: false, error: (error as Error).message });
     }
@@ -960,6 +962,40 @@ export default function Page() {
   }
 
   const displayedResult = reopenedMission?.snapshot.assessment ?? researchResult;
+  const compareAvailable = !!comparisonState?.results.length || comparisonScenarios.length > 0;
+  const assessmentAvailable = !!displayedResult;
+  const plannerAvailable = assessmentAvailable || openSavedLabReport;
+  const comparedAssessments = reopenedMission ? [] : comparisonEntries(
+    comparisonMission, searchRecord.alternatives, comparisonScenarios, comparisonState?.results,
+  ).flatMap(({ assessment }) => assessment ? [assessment] : []);
+  useEffect(() => {
+    const fallback = activeArea || compareAvailable ? 11 : 7;
+    const lockedRoute = (view === 11 && fallback === 7) ||
+      (view === 8 && !assessmentAvailable) || (view === 12 && !plannerAvailable);
+    if (!lockedRoute) return;
+    history.replaceState(history.state, "", `#${viewPaths[fallback]}`);
+    setViewState(fallback);
+  }, [activeArea, assessmentAvailable, compareAvailable, plannerAvailable, view]);
+  useEffect(() => {
+    if (view !== 8 || !focusComparedSites.current) return;
+    focusComparedSites.current = false;
+    document.getElementById("compared-assessments")?.focus({ preventScroll: true });
+  }, [displayedResult, view]);
+  function startNewAssessmentSearch() {
+    areaRequest.current?.abort();
+    researchActions.current?.cancel();
+    setAreaSearch(undefined);
+    setAreaAssessments([]);
+    setAreaFailures({});
+    setAreaAssessing(false);
+    setResearchComparison(null);
+    setWhatIfComparison(null);
+    setChosenAlternatives([]);
+    setResearchResult(null);
+    setOpenSavedLabReport(false);
+    resetMissionWindow();
+    openSearchForm();
+  }
   const assessedAreaCentre = !reopenedMission && activeArea?.result && displayedResult &&
     (comparisonState?.results.includes(displayedResult) || comparisonScenarios.some(({ result }) => result === displayedResult))
     ? activeArea.area.centre : undefined;
@@ -1023,7 +1059,10 @@ export default function Page() {
   return (
     <div className={`app-shell lunar-app ${full?"full-view":"simple-view"}`} style={{"--ui-scale":preferences.scale} as CSSProperties}>
       <div className="stars" aria-hidden="true"/>
-      <Navigation view={view} education={education} compareAvailable={!!comparisonState?.results.length || comparisonScenarios.length > 0} resultAvailable={!!displayedResult} accountName={accountName} onLogout={()=>{setAccountName(null);if(view===13)setView(7);}} onNavigate={setView} preferences={preferences} onPreferences={updatePreferences}/>
+      <Navigation view={view} education={education} compareAvailable={compareAvailable} resultAvailable={assessmentAvailable} plannerAvailable={plannerAvailable} accountName={accountName} onLogout={()=>{setAccountName(null);if(view===13)setView(7);}} onNavigate={next=>{
+        if (next === 12 && displayedResult && view !== 12) openAssessmentInPlanner(displayedResult);
+        else setView(next);
+      }} preferences={preferences} onPreferences={updatePreferences}/>
       {!education&&<NewsSidebar key={view === 8 || view === 12 ? view : "news"} showAiPet={view === 8 || view === 12} aiContext={aiContext} signedIn={Boolean(accountName)} onSignIn={() => setView(13)} planner={view === 12}/>}
       <div className="main-shell">
         <div className="workspace-with-news"><main id="main-content">
@@ -1060,7 +1099,7 @@ export default function Page() {
             } : undefined}
             onOpenResult={(record, snapshot) => { setReopenedMission({ record, snapshot }); setResearchEquipment(snapshot.equipment); setView(8); }} onUsernameChange={setAccountName} onRestore={r=>{restoreMission(r.mission);setChosenAlternatives(r.alternatives);setResearchPriority(r.priority === "I" ? "I" : "overall");setRadiusKm(r.radiusKm ?? 20);areaRequest.current?.abort();setAreaSearch(undefined);setView(7);}}/>}
           {education&&<PortableEducation animate={preferences.animate}/>}
-          {(view===12 || labSource)&&<div hidden={view!==12}><PowerMissionLab onAiContextChange={setPlannerAiContext} key={JSON.stringify([labSource?.key, labReportVersion])} openSavedReport={openSavedLabReport} source={labSource} sourceError={labError} currentResult={displayedResult !== labSource?.assessment ? displayedResult : null} onUseCurrentResult={openAssessmentInPlanner} onResult={()=>{
+          {((view===12 && plannerAvailable) || labSource)&&<div hidden={view!==12 || !plannerAvailable}><PowerMissionLab onAiContextChange={setPlannerAiContext} key={JSON.stringify([labSource?.key, labReportVersion])} openSavedReport={openSavedLabReport} source={labSource} sourceError={labError} currentResult={displayedResult !== labSource?.assessment ? displayedResult : null} onUseCurrentResult={openAssessmentInPlanner} onResult={()=>{
             if (labSource && displayedResult !== labSource.assessment) {
               setReopenedMission({
                 record: { ...searchRecord, mission: labSource.site, alternatives: [] },
@@ -1069,7 +1108,10 @@ export default function Page() {
             }
             setView(8);
           }} onConfigure={openSearchForm}/></div>}
-          {view===8&&<ResearchOverview key={JSON.stringify(displayedResult?.mission)} result={displayedResult} onNewSearch={() => { resetMissionWindow(); openSearchForm(); }} comparisonOrigin={comparisonOrigin} assessedAreaCentre={assessedAreaCentre} comparisonRadiusKm={comparisonRadius} onNavigate={setView} onRunAgain={reopenedMission ? async () => {
+          {view===8&&assessmentAvailable&&<ResearchOverview key={JSON.stringify(displayedResult?.mission)} result={displayedResult} comparedAssessments={comparedAssessments} onSelectAssessment={assessment=>{
+            focusComparedSites.current = true;
+            setResearchResult(assessment);
+          }} onNewSearch={startNewAssessmentSearch} comparisonOrigin={comparisonOrigin} assessedAreaCentre={assessedAreaCentre} comparisonRadiusKm={comparisonRadius} onNavigate={setView} onRunAgain={reopenedMission ? async () => {
             if (rerunningMission) return;
             const controller = new AbortController();
             rerunRequest.current = controller;

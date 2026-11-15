@@ -50,6 +50,7 @@ export default function Navigation({
   education,
   compareAvailable,
   resultAvailable,
+  plannerAvailable,
   accountName,
   onLogout,
   onNavigate,
@@ -60,6 +61,7 @@ export default function Navigation({
   education: boolean;
   compareAvailable: boolean;
   resultAvailable: boolean;
+  plannerAvailable: boolean;
   accountName?: string | null;
   onLogout: () => void;
   onNavigate: (view: number) => void;
@@ -225,15 +227,15 @@ export default function Navigation({
         {[
           { label: "Configure", view: 7 },
           { label: "Compare", view: 11, disabled: !compareAvailable },
-          { label: "Result", view: 8, disabled: !resultAvailable },
-          { label: "Mission Planner", view: 12 },
+          { label: "Assessment", view: 8, disabled: !resultAvailable, hint: "Choose View assessment for a site in Compare" },
+          { label: "Mission Planner", view: 12, disabled: !plannerAvailable, hint: "Open a site assessment first" },
         ].map((item) => (
           <a
             key={item.view}
             href={item.disabled ? undefined : `#${viewPaths[item.view]}`}
             role={item.disabled ? "link" : undefined}
             aria-disabled={item.disabled || undefined}
-            title={item.disabled ? "Run Find landing point to see assessment results" : undefined}
+            title={item.disabled ? item.hint ?? "Run Find landing point to compare sites" : undefined}
             aria-current={
               view === item.view || (item.view === 8 && view === 15)
                 ? "page"

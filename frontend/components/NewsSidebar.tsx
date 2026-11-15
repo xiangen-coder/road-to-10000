@@ -71,7 +71,7 @@ export default function NewsSidebar({ showAiPet, aiContext, signedIn, onSignIn, 
       <div className="lunar-shortcuts">
         {showAiPet && !aiOpen && (
           <button type="button" className="lunar-shortcut-placeholder"
-            aria-label="Ask Lunar AI" aria-expanded={aiOpen} aria-controls="lunar-ai-popover"
+            aria-label="Ask Lunar SI" aria-expanded={aiOpen} aria-controls="lunar-ai-popover"
             onClick={() => { setPanelOpen(false); setOpen(null); setAiOpen((value) => !value); }}>
             <LunarSpacecraft />
           </button>

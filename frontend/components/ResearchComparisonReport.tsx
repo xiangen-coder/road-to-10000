@@ -255,7 +255,7 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
             <p>{formatCoordinates(point.latitude, point.longitude)} · {format(duration(point), " h")}</p>
             {!sharedWindow && <p>{utc(point.start)} → {utc(point.end)}</p>}
             <p>{assessmentStatus(entries[index])}</p>
-            {!singleMission && assessment && <button className="text-button" onClick={() => onInspect(assessment)}>View full result ↗</button>}
+            {!singleMission && assessment && <button className="text-button" onClick={() => onInspect(assessment)}>View assessment ↗</button>}
           </article>
         ))}
       </div>

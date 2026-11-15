@@ -58,7 +58,7 @@ test("three lunar sites with real ephemerides and report downloads", async ({ pa
     document.querySelectorAll<HTMLDetailsElement>("#research-report details").forEach((item) => { item.open = true; });
   });
   await page.pdf({ path: "../outputs/lunar-research-report.pdf", format: "A4", printBackground: true });
-  await page.getByRole("article", { name: "Pre-result 2: Shackleton backup A" }).getByRole("button", { name: "More details" }).click();
+  await page.getByRole("article", { name: "Pre-result 2: Shackleton backup A" }).getByRole("button", { name: "View assessment" }).click();
   const timeline = page.getByRole("slider", { name: "Mission time" });
   await timeline.fill("4");
   await expect(timeline).toHaveAttribute("aria-valuetext", /02 Oct/);

@@ -59,7 +59,7 @@ async function openCompare(page: Page, withAlternatives = false) {
   });
   await page.goto("/#search", { waitUntil: "domcontentloaded" });
   const navigation = page.getByRole("navigation", { name: "Main navigation" });
-  const tabs = ["Compare", "Result"].map((name) => navigation.getByRole("link", { name, exact: true }));
+  const tabs = ["Compare", "Assessment", "Mission Planner"].map((name) => navigation.getByRole("link", { name, exact: true }));
   for (const tab of tabs) {
     await expect(tab).toBeDisabled();
     await expect(tab).not.toHaveAttribute("href");
@@ -74,7 +74,8 @@ async function openCompare(page: Page, withAlternatives = false) {
   await expect(configure.getByText(/cyan ring marks the 5 km search radius/)).toBeVisible();
   await configure.getByRole("button", { name: "Find landing point", exact: true }).click();
   await expect(page.locator(".research-centre-summary")).toContainText("5 km");
-  for (const tab of tabs) await expect(tab).toBeEnabled();
+  await expect(tabs[0]).toBeEnabled();
+  for (const tab of tabs.slice(1)) await expect(tab).toBeDisabled();
   const plan = page.getByRole("article", { name: "What IF" });
   await expect(plan.getByRole("button", { name: "Run What IF" })).toBeVisible();
   return plan;
@@ -104,7 +105,7 @@ test("shows the assessed site's summary, methods, Lunar Journey and Water/Ice Ev
     } } });
   });
   await openCompare(page);
-  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "More details" }).click();
+  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "View assessment" }).click();
   await page.evaluate(() => {
     window.print = () => {
       const report = document.querySelector(".assessment-print-report");
@@ -326,7 +327,7 @@ test("saved mission opens its completed result without a new analysis", async ({
     }] : [] } });
   });
   await openCompare(page);
-  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "More details" }).click();
+  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "View assessment" }).click();
   await page.route("**/api/research/evaluate", (route) => {
     analysisCount++;
     const { mission } = route.request().postDataJSON();
@@ -375,6 +376,30 @@ test("Change location reveals the initial ranked list two at a time", async ({ p
   await expect(choices.nth(1)).toBeDisabled();
   await expect(plan.getByRole("button", { name: "Compare selected (3)" })).toBeEnabled();
   expect(extraRequests).toEqual([]);
+  await plan.getByRole("button", { name: "Compare selected (3)" }).click();
+  const analysisRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/\/api\/research\/(evaluate|research-area|plan-b)$/.test(request.url())) analysisRequests.push(request.url());
+  });
+  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ })
+    .getByRole("button", { name: "View assessment" }).click();
+  const picker = page.getByRole("combobox", { name: "Compared sites" });
+  const header = page.getByRole("navigation", { name: "Main navigation" });
+  await expect(header.getByRole("link", { name: "Assessment", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(header.getByRole("link", { name: "Mission Planner", exact: true })).toBeEnabled();
+  await expect(picker.getByRole("option")).toHaveCount(3);
+  await expect(picker.getByRole("option", { name: /Ranked ridge 5.*° S/ })).toHaveCount(1);
+  await picker.selectOption({ index: 2 });
+  await expect(page.getByRole("heading", { name: "Ranked ridge 5", exact: true })).toBeVisible();
+  await expect(page.locator("#result-summary")).toContainText("60.00 / 100");
+  await expect(picker).toBeFocused();
+  expect(analysisRequests).toEqual([]);
+  await page.getByRole("button", { name: "Ask Lunar SI" }).click();
+  await expect(page.getByRole("heading", { name: "Lunar SI", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New search", exact: true }).click();
+  for (const name of ["Compare", "Assessment", "Mission Planner"]) {
+    await expect(header.getByRole("link", { name, exact: true })).toBeDisabled();
+  }
 });
 
 
@@ -400,12 +425,13 @@ test("Mission Planner imports the Result and models a battery change", async ({ 
   });
   await page.getByRole("button", { name: "Back to Search", exact: true }).first().click();
   await page.getByRole("button", { name: "Find landing point", exact: true }).click();
-  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "More details" }).click();
+  await page.getByRole("article", { name: /Highest-scoring point evaluated:/ }).getByRole("button", { name: "View assessment" }).click();
   let analysisRequests = 0;
   page.on("request", (request) => {
     if (/\/api\/research\/(evaluate|research-area)$/.test(request.url())) analysisRequests++;
   });
-  await page.getByRole("button", { name: "Open in Mission Planner" }).click();
+  await page.getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Mission Planner", exact: true }).click();
   await expect(page.getByText("Imported from your Result")).toBeVisible();
   await page.getByRole("button", { name: "Run power simulation" }).click();
   await expect(page.getByRole("region", { name: "Mission Planner" }).getByRole("alert")).toContainText("Enter effective incident irradiance (W/m²).");

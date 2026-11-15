@@ -84,7 +84,7 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
       });
       const data = await response.json();
       if (!response.ok || typeof data.answer !== "string")
-        throw new Error(data.error ?? "Lunar AI could not answer.");
+        throw new Error(data.error ?? "Lunar SI could not answer.");
       if (controller.signal.aborted) return;
       setMessages([...messages, next[next.length - 1], { role: "model", text: data.answer }]);
       setQuestion("");
@@ -100,13 +100,13 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
 
   if (minimized) return (
     <button className="lunar-ai-pill" ref={pill} type="button" onClick={() => setMinimized(false)}
-      aria-label="Restore Lunar AI" title="Restore Lunar AI">
+      aria-label="Restore Lunar SI" title="Restore Lunar SI">
       <LunarSpacecraft />
     </button>
   );
 
   return (
-    <section id="lunar-ai-popover" className="lunar-ai-companion" aria-label="Lunar AI"
+    <section id="lunar-ai-popover" className="lunar-ai-companion" aria-label="Lunar SI"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.stopPropagation();
@@ -115,9 +115,9 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
       }}>
       <header className="lunar-ai-header">
         <span className="lunar-ai-spacecraft"><LunarSpacecraft size={38} /></span>
-        <div><h2>Lunar AI</h2><p>Your mission, in context</p></div>
+        <div><h2>Lunar SI</h2><p>Your mission, in context</p></div>
         <button type="button" aria-label="New conversation" title="New conversation" onClick={reset}><SquarePen size={16} /></button>
-        <button type="button" aria-label="Minimize Lunar AI" title="Minimize Lunar AI" onClick={() => setMinimized(true)}><Minus size={17} /></button>
+        <button type="button" aria-label="Minimize Lunar SI" title="Minimize Lunar SI" onClick={() => setMinimized(true)}><Minus size={17} /></button>
       </header>
       <div className="lunar-ai-context">
         <Layers size={15} aria-hidden="true" /><span>{copy.contextLabel}</span>
@@ -148,13 +148,13 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
             <div role="log" aria-label="Conversation" aria-live="polite">
               {messages.map((message, index) => (
                 <article key={index} className={`lunar-ai-message lunar-ai-${message.role}`}>
-                  <strong>{message.role === "user" ? "You" : "Lunar AI"}</strong>
+                  <strong>{message.role === "user" ? "You" : "Lunar SI"}</strong>
                   {message.role === "model" ? <Markdown skipHtml disallowedElements={["img"]}>{message.text}</Markdown> : <p>{message.text}</p>}
                 </article>
               ))}
               {(busy || error) && <article className="lunar-ai-message lunar-ai-user"><strong>You</strong><p>{question}</p></article>}
             </div>
-            {busy && <p role="status">Lunar AI is thinking…</p>}
+            {busy && <p role="status">Lunar SI is thinking…</p>}
             {error && <div><p role="alert">{error}</p><button type="button" className="lunar-ai-retry"
               disabled={!signedIn || !question.trim()} onClick={() => void send()}>Retry</button></div>}
           </>
@@ -174,7 +174,7 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
       </form>
       <footer className="lunar-ai-footer">
         <p>Powered by Gemini · Check answers against source data.</p>
-        {!signedIn && <button type="button" onClick={onSignIn}>Sign in to ask Lunar AI</button>}
+        {!signedIn && <button type="button" onClick={onSignIn}>Sign in to ask Lunar SI</button>}
       </footer>
     </section>
   );

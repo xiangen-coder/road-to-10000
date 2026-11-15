@@ -4,7 +4,7 @@ import type { Mission } from "../app/types";
 test("adding three research sites shares the mission settings and exports their evidence", async ({ page }) => {
   const requests: Mission[] = [];
   // Test-only response fixture. Real Horizons and raster calculations are tested in the backend.
-  await page.route("**/api/research/evaluate", async (route) => {
+  await page.route(/\/api\/research\/(evaluate|research-area)$/, async (route) => {
     const { mission } = route.request().postDataJSON() as { mission: Mission };
     requests.push(mission);
     const span = { start: mission.start, end: mission.end, hours: 24 };
@@ -15,7 +15,7 @@ test("adding three research sites shares the mission settings and exports their 
       name, score, quality: "Test fixture", explanation: "Test fixture",
       weight: 0, effective_weight: 0, contribution: null,
     }]));
-    await route.fulfill({ json: {
+    const assessment = {
       mission, factors, score: 100, provisional: true, available_weight: 0.45,
       missing: ["T", "H", "I"], warnings: [
         "Boulder and crater mapping is incomplete.",
@@ -35,7 +35,12 @@ test("adding three research sites shares the mission settings and exports their 
           sun_visible: true, earth_visible: true, simultaneous: true,
         })),
       },
-    } });
+    };
+    const areaSearch = route.request().url().endsWith("/research-area");
+    await route.fulfill({ json: areaSearch ? {
+      results: [assessment], recommended: true, sampled: 1, reasons: [],
+      counts: { evaluated: 1, limits: 0, missing: 0, unavailable: 0, focus_missing: 0 },
+    } : assessment });
   });
   await page.goto("/#search");
   await page.locator("#landing-search-form").getByLabel("Centre name").selectOption({ label: "Shackleton vicinity" });
@@ -43,8 +48,7 @@ test("adding three research sites shares the mission settings and exports their 
   await page.locator("#landing-search-form").getByLabel("End date", { exact: true }).fill("2026-10-02");
   await page.locator("#landing-search-form").getByLabel("Start time (UTC)", { exact: true }).fill("00:00");
   await page.locator("#landing-search-form").getByLabel("End time (UTC)", { exact: true }).fill("00:00");
-  // Exercise the legacy comparison deep link before there is a ranked area search.
-  await page.evaluate(() => { window.location.hash = "pre-results"; });
+  await page.getByRole("button", { name: "Find landing point", exact: true }).click();
   await page.getByRole("article", { name: "What IF" }).getByText("Change location", { exact: true }).click();
   await page.getByText("Custom coordinates and terrain suggestions", { exact: true }).click();
   const picker = page.locator("#choose-comparison-sites");
@@ -56,7 +60,7 @@ test("adding three research sites shares the mission settings and exports their 
   };
   await addPoint("Distant point", "-11", "-11");
   await expect(picker.getByRole("alert")).toContainText("within 20 km");
-  expect(requests).toHaveLength(0);
+  expect(requests).toHaveLength(1);
   await addPoint("Shackleton backup A", "-89.52", "0");
   const table = page.getByRole("table", { name: "Side-by-side research comparison" });
   await expect(table.getByRole("row", { name: /Simultaneous visibility/ })).toContainText("24.0 h");
@@ -105,7 +109,7 @@ test("adding three research sites shares the mission settings and exports their 
   await expect(table).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeHidden();
   await page.emulateMedia({ media: "screen" });
-  await report.getByRole("article").filter({ has: page.getByRole("heading", { name: "Shackleton backup A · Baseline" }) }).getByRole("button", { name: "View full result" }).click();
+  await report.getByRole("article").filter({ has: page.getByRole("heading", { name: "Shackleton backup A · Baseline" }) }).getByRole("button", { name: /View assessment/ }).click();
   const slider = page.getByRole("slider", { name: "Mission time" });
   await slider.fill("1");
   await expect(slider).toHaveAttribute("aria-valuetext", /02 Oct/);
@@ -122,7 +126,7 @@ test("adding three research sites shares the mission settings and exports their 
   await page.getByRole("button", { name: "Back to comparison" }).click();
   await expect(page).toHaveURL(/#pre-results$/);
   await expect(table).toBeVisible();
-  await page.getByRole("link", { name: "Result", exact: true }).click();
+  await page.getByRole("link", { name: "Assessment", exact: true }).click();
   await page.getByRole("button", { name: "More", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: /3D observatory/ })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Main navigation" })

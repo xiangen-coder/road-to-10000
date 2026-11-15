@@ -15,7 +15,7 @@ import {
   type PlanBForecast,
 } from "../lib/plan-b";
 import PlanBComparison from "./PlanBComparison";
-import type { ResearchArea, ResearchAreaResult } from "../lib/research-area";
+import { comparisonEntries, type ResearchArea, type ResearchAreaResult } from "../lib/research-area";
 const criteria = [
   ["S", "Sunlight"],
   ["C", "Earth-centre visibility"],
@@ -84,33 +84,18 @@ export default function PreliminaryComparison({
     focusWorkspace.current = true;
     setComparing(compare);
   }
-  const planned = [
-    mission,
-    ...alternatives.map((site) => ({ ...mission, ...site })),
-  ];
+  const cards = comparisonEntries(mission, alternatives, scenarios, state?.results);
+  const planned = cards.filter(({ scenario }) => !scenario).map(({ site }) => site);
   const isCompared = (option: PlanBForecast) =>
     planned.some((site) => sameMission(site, option.result.mission)) ||
     scenarios.some((scenario) =>
       sameMission(scenario.result.mission, option.result.mission),
     );
-  const cards = [
-    ...planned.map((site) => ({ site, scenario: undefined })),
-    ...scenarios
-      .filter(
-        (scenario) =>
-          !planned.some((site) => sameMission(site, scenario.result.mission)),
-      )
-      .map((scenario) => ({ site: scenario.result.mission, scenario })),
-  ];
   const selected = state?.results.find((r) => sameMission(r.mission, mission));
   const hasResults = !area || !!areaResult?.results.length;
   const searchingArea = !!area && !areaResult && !!state?.busy;
   const hasRecommendation = hasResults && areaResult?.recommended !== false;
-  const assessments = cards.map(
-    ({ site, scenario }) =>
-      scenario?.result ??
-      state?.results.find((value) => sameMission(value.mission, site)),
-  );
+  const assessments = cards.map(({ assessment }) => assessment);
   function comparableFactor(candidate: Research, factor: string) {
     if (!selected) return false;
     if (factor === "S" || factor === "C")
@@ -492,7 +477,7 @@ export default function PreliminaryComparison({
             disabled={!result}
             onClick={() => result && onInspect(result)}
           >
-            More details <ChevronRight size={16} aria-hidden="true" />
+            View assessment <ChevronRight size={16} aria-hidden="true" />
           </button>
           {result && (
             <small>
@@ -668,7 +653,7 @@ export default function PreliminaryComparison({
       </div>
       {hasResults && (
         <p className="preliminary-disclosure">
-          Provisional research scores. See More details for evidence and coverage.
+          Provisional research scores. Open an assessment for evidence and coverage.
         </p>
       )}
     </section>
