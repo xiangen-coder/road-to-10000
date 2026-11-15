@@ -174,7 +174,11 @@ test("delay search samples then refines, ranks by score and preserves the origin
   const criteria = original.getByRole("region", { name: "Criteria at a glance" });
   await expect(criteria.getByRole("meter", { name: "Water-ice potential" })).toHaveCount(0);
   await expect(criteria.getByRole("meter", { name: "Temperature" })).toHaveCount(0);
+  const searchLimitations = original.getByText("1 of 17 sampled points returned a score.", { exact: false });
+  await expect(searchLimitations).toBeHidden();
   await original.getByText("Environment & limits", { exact: true }).click();
+  await expect(searchLimitations).toBeVisible();
+  await expect(original.getByText("Points checked without a score: 16.")).toBeVisible();
   const originalText = await original.innerText();
   await expect(plan.getByRole("radio", { name: "Change date" })).toBeChecked();
   await plan.getByRole("button", { name: "Run What IF" }).click();
@@ -194,6 +198,7 @@ test("delay search samples then refines, ranks by score and preserves the origin
   const mobile = await plan.boundingBox();
   expect(mobile!.x).toBeGreaterThanOrEqual(0);
   expect(mobile!.x + mobile!.width).toBeLessThanOrEqual(390);
+  await expect(plan.getByRole("columnheader", { name: "Earth-centre visibility" })).toHaveCSS("white-space", "nowrap");
 });
 
 test("location and combined searches keep the baseline and enforce the selected radius", async ({ page }) => {

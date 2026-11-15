@@ -130,6 +130,10 @@
   color: inherit;
 }
 .what-if-options-scroll .what-if-options { min-width: 635px; }
+.what-if-options thead th {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
 .what-if-options thead,
 .what-if-options tr.is-selected { background: #a5bee62e; }
 .what-if-options small,

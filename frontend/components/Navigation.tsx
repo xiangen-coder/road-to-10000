@@ -6,7 +6,6 @@ import {
   ArrowUpRight,
   ChevronDown,
   Orbit,
-  Rocket,
   Settings,
   X,
   UserRound,
@@ -36,7 +35,6 @@ export const viewPaths = [
 ];
 export const toolItems = [
   { view: 5, label: "3D observatory", icon: Orbit, detail: "Interactive Earth-to-Moon journey" },
-  { view: 12, label: "Mission Planner", icon: Rocket, detail: "Lander power simulation & mission reports" },
   { view: 4, label: "Lunar mission archive", icon: Archive, detail: "Historical missions & documented 3D paths" },
 ];
 
@@ -223,11 +221,12 @@ export default function Navigation({
             </a>
           ))}
         </nav>
-      ) : <nav className="nav-pill glass" aria-label="Main navigation">
+      ) : <nav className="nav-pill glass professional-nav-pill" aria-label="Main navigation">
         {[
           { label: "Configure", view: 7 },
           { label: "Compare", view: 11, disabled: !compareAvailable },
           { label: "Result", view: 8, disabled: !resultAvailable },
+          { label: "Mission Planner", view: 12 },
         ].map((item) => (
           <a
             key={item.view}

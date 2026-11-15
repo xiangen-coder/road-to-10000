@@ -93,7 +93,7 @@ test("observatory opens Lunar Journey directly", async ({ page }) => {
   await page.getByLabel("Centre name").selectOption({ label: "Shackleton vicinity" });
   await page.getByRole("button", { name: "More", exact: true }).click();
   await expect(nav(page, "Map explorer")).toHaveCount(0);
-  await expect(nav(page, "Mission Planner")).toBeVisible();
+  await expect(nav(page, "Mission Planner")).toHaveCount(0);
   await expect(nav(page, "Lunar surface route")).toHaveCount(0);
   const modelAssets = ["earth.glb", "sun.glb", "moon-texture.jpg"].map((asset) =>
     page.waitForResponse((response) => response.url().endsWith("/models/" + asset)),
@@ -128,11 +128,23 @@ test("mission archive uses the site palette and keeps its trajectory controls", 
 });
 
 
-test("Mission Planner replaces the old planner and Mission Lab routes", async ({ page }) => {
+test("Mission Planner has its own navigation tab and supports the old Mission Lab route", async ({ page }) => {
   await page.goto("/#mission-lab");
   await expect(page).toHaveURL(/#mission-planner$/);
   await expect(page.getByRole("heading", { name: "Mission Planner." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Vehicle worksheet", exact: true })).toHaveCount(0);
+  const header = page.getByRole("navigation", { name: "Main navigation" });
+  const planner = header.getByRole("link", { name: "Mission Planner", exact: true });
+  await expect(planner).toHaveAttribute("aria-current", "page");
   await page.getByRole("button", { name: "More", exact: true }).click();
-  await expect(nav(page, "Mission Planner")).toHaveCount(1);
+  await expect(nav(page, "Mission Planner")).toHaveCount(0);
+  await expect(nav(page, "Lunar mission archive")).toBeVisible();
+  await header.getByRole("link", { name: "Configure", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 800 });
+  const bounds = await planner.boundingBox();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  await planner.click();
+  await expect(page).toHaveURL(/#mission-planner$/);
+  await expect(planner).toHaveAttribute("aria-current", "page");
 });

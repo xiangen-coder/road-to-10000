@@ -125,7 +125,8 @@ test("adding three research sites shares the mission settings and exports their 
   await page.getByRole("link", { name: "Result", exact: true }).click();
   await page.getByRole("button", { name: "More", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: /3D observatory/ })).toBeVisible();
-  await expect(page.getByRole("menuitem", { name: /Mission Planner/ })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Main navigation" })
+    .getByRole("link", { name: "Mission Planner", exact: true })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: /^(Mission report|Horizon simulator|Terrain analysis|Site comparison)\b/i })).toHaveCount(0);
   await page.evaluate(() => { window.location.hash = "mission-report"; });
   await expect(page).toHaveURL(/#pre-results$/);

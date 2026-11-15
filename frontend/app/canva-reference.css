@@ -139,6 +139,33 @@
     padding-inline: 13px;
   }
 }
+@media (min-width: 1101px) and (max-width: 1240px) {
+  .lunar-app .professional-nav-pill > a,
+  .lunar-app .professional-nav-pill > .more-menu-wrap > button {
+    padding-inline: 8px;
+  }
+}
+@media (max-width: 600px) {
+  .professional-nav-pill {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .lunar-app .lunar-topbar .professional-nav-pill > a,
+  .lunar-app .lunar-topbar .professional-nav-pill > .more-menu-wrap > button {
+    padding-inline: 5px;
+    font-size: 12px;
+  }
+  .professional-nav-pill .more-menu-wrap {
+    position: static;
+  }
+  .lunar-app .professional-nav-pill .more-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+}
 @media (max-width: 500px) {
   .lunar-app .lunar-topbar:has(.header-login) .lunar-brand {
     gap: 6px;
