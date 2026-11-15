@@ -16,6 +16,7 @@ import {
 } from "../lib/plan-b";
 import PlanBComparison from "./PlanBComparison";
 import { comparisonEntries, type ResearchArea, type ResearchAreaResult } from "../lib/research-area";
+import { siteLocationName } from "../lib/site-location";
 const criteria = [
   ["S", "Sunlight"],
   ["C", "Earth-centre visibility"],
@@ -142,6 +143,8 @@ export default function PreliminaryComparison({
     const result = assessments[index];
     const failure = scenario ? undefined : state?.failures[key(site)];
     const isSelected = index === 0;
+    const locationName = siteLocationName(site, area?.centre ?? mission);
+    const coordinates = formatCoordinates(site.latitude, site.longitude);
     const title = isSelected
       ? area && hasResults
         ? hasRecommendation ? (priority === "overall" ? "Highest-scoring point evaluated" : "Highest-ranked point evaluated") : "Point for inspection"
@@ -185,13 +188,18 @@ export default function PreliminaryComparison({
           site.clearance_deg,
         ])}
         className="pre-result-card glass"
-        aria-label={`${title}: ${site.name}`}
+        aria-label={`${title}: ${locationName}`}
       >
         <header className="pre-result-heading">
           <h2>{title}</h2>
           {searchingArea ? (
             <p role="status"><span className="pre-result-spinner" aria-hidden="true" />Searching the research area…</p>
-          ) : !area && <p>{site.name}</p>}
+          ) : (
+            <>
+              {(!area || result) && (!isSelected || locationName !== coordinates) && <p>{locationName}</p>}
+              {isSelected && result && <p>Coordinates · {coordinates}</p>}
+            </>
+          )}
           {comparing && (
             <dl className="what-if-card-window">
               <div>
@@ -317,10 +325,10 @@ export default function PreliminaryComparison({
             {area && !searchingArea && (
               <div>
                 <dt>Assessed point</dt>
-                <dd>{site.name} · {formatCoordinates(site.latitude, site.longitude)}</dd>
+                <dd>{locationName}{locationName !== coordinates && ` · ${coordinates}`}</dd>
                 <dd>
                   {comparisonDistanceKm(area.centre, site).toFixed(2)} km from the research centre,
-                  {" "}{area.centre.name} ({formatCoordinates(area.centre.latitude, area.centre.longitude)}).
+                  {" "}{siteLocationName(area.centre)}.
                 </dd>
               </div>
             )}
@@ -687,7 +695,7 @@ function AssessmentSummary({ mission, radiusKm, result }: {
   return (
     <div className="compare-assessment">
       <dl className="research-centre-summary glass">
-        <div><dt>Research area name</dt><dd>{mission.name?.trim() || "Custom location"}</dd></div>
+        <div><dt>Research area name</dt><dd>{siteLocationName(mission)}</dd></div>
         <div><dt>Research area coordinates</dt><dd>{coordinatesAvailable
           ? formatCoordinates(mission.latitude, mission.longitude) : "Unavailable"}</dd></div>
         <div><dt>Search radius</dt><dd>{radiusKm} km</dd></div>

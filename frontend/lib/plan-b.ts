@@ -3,6 +3,7 @@ import type { Research } from "../components/LandingResearch";
 import type { ResearchPriority } from "../components/SearchConsole";
 import { solarEnergy, validSolar, type SolarSettings } from "../components/mission-lab/scenario-science";
 import { comparisonRadiusKm, inComparisonArea, siteKey } from "../components/ComparisonPicker";
+import { siteLocationName } from "./site-location";
 import type { ResearchArea } from "./research-area";
 
 const day = 86_400_000;
@@ -257,7 +258,7 @@ export async function findPlanB({
   async function evaluate(site: PlanBSite, index: number) {
     signal.throwIfAborted();
     const candidate = candidateMission(mission, site.location, touchdownAt(dates.first, index));
-    report(`Checking ${candidate.name} · ${candidate.start.slice(0, 10)} UTC…`);
+    report(`Checking ${siteLocationName(candidate, area?.centre ?? mission)} · ${candidate.start.slice(0, 10)} UTC…`);
     try {
       const assessment = await planBRequest<PlanBAssessment>("/api/research/plan-b", {
         mission: candidate,

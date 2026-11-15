@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCoordinates } from "../lib/format-coordinates";
+import { siteLocationName } from "../lib/site-location";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { comparisonDistanceKm, comparisonRadiusKm, inComparisonArea, siteKey } from "./ComparisonPicker";
@@ -65,10 +66,12 @@ function OptionDetails({
   option,
   original,
   equipment,
+  locationName,
 }: {
   option: PlanBForecast;
   original: Research;
   equipment: SolarSettings;
+  locationName: string;
 }) {
   const { result, bounds } = option;
   const mission = result.mission;
@@ -87,7 +90,7 @@ function OptionDetails({
     } catch {}
   }
   const readings = [
-    ["Landing location", mission.name],
+    ["Landing location", locationName],
     ["Touchdown", utc(mission.start)],
     [
       "Delay",
@@ -126,7 +129,7 @@ function OptionDetails({
     <>
       <table
         className="what-if-table"
-        aria-label={`Comparison for ${mission.name} at ${utc(mission.start)}`}
+        aria-label={`Comparison for ${locationName} at ${utc(mission.start)}`}
       >
         <thead>
           <tr>
@@ -442,7 +445,7 @@ export default function PlanBComparison({
               {mode === "relocate"
                 ? `Same touchdown: ${(original ? utc(mission.start) : "—")}`
                 : `${range === "custom" ? custom || "Custom window" : range === "month" ? "Next month" : "Next year"} · ${time ? `${time} UTC` : (original ? utc(mission.start).slice(11) : "—")}`}
-              <small>{mode === "delay" ? "Landing point" : "Research centre"}: {mode === "delay" ? original?.mission.name ?? "—" : area?.centre.name ?? mission.name}</small>
+              <small>{mode === "delay" ? "Landing point" : "Research centre"}: {mode === "delay" ? original ? siteLocationName(original.mission, area?.centre) : "—" : siteLocationName(area?.centre ?? mission)}</small>
             </div>
             {!editing && status !== "running" && (
               <button
@@ -631,7 +634,7 @@ export default function PlanBComparison({
                               />
                             </td>
                             <th scope="row">
-                              {rankedLocationMode && "#1 · "}{original.mission.name}
+                              {rankedLocationMode && "#1 · "}{siteLocationName(original.mission, area?.centre)}
                               <small>{utc(original.mission.start)}</small>
                             </th>
                             <td>{optionValue(original.score)}</td>
@@ -668,6 +671,7 @@ export default function PlanBComparison({
                               area?.centre ?? original.mission,
                               candidate,
                             );
+                            const locationName = siteLocationName(candidate, area?.centre ?? original.mission);
                             return (
                               <Fragment key={key}>
                                 <tr
@@ -680,12 +684,12 @@ export default function PlanBComparison({
                                       type="checkbox"
                                       checked={checked}
                                       disabled={added || (!checked && selectedOptions.length >= remainingSlots)}
-                                      aria-label={`Select ${candidate.name} · ${utc(candidate.start)}`}
+                                      aria-label={`Select ${locationName} · ${utc(candidate.start)}`}
                                       onChange={() => toggleOption(key)}
                                     />
                                   </td>
                                   <th scope="row">
-                                    {rankedLocationMode && `#${index + 2} · `}{candidate.name}
+                                    {rankedLocationMode && `#${index + 2} · `}{locationName}
                                     <small>{utc(candidate.start)}</small>
                                     <small>
                                       {mode !== "delay" &&
@@ -734,7 +738,7 @@ export default function PlanBComparison({
                                       className="button subtle"
                                       type="button"
                                       aria-expanded={expanded === key}
-                                      aria-label={`Details for ${candidate.name} · ${utc(candidate.start)}`}
+                                      aria-label={`Details for ${locationName} · ${utc(candidate.start)}`}
                                       onClick={() =>
                                         setExpanded(
                                           expanded === key ? null : key,
@@ -755,6 +759,7 @@ export default function PlanBComparison({
                                         option={option}
                                         original={original}
                                         equipment={equipment}
+                                        locationName={locationName}
                                       />
                                     </td>
                                   </tr>
@@ -782,9 +787,9 @@ export default function PlanBComparison({
                           type="button"
                           key={key}
                           onClick={() => toggleOption(key)}
-                          aria-label={`Deselect ${option.result.mission.name} · ${utc(option.result.mission.start)}`}
+                          aria-label={`Deselect ${siteLocationName(option.result.mission, area?.centre ?? original.mission)} · ${utc(option.result.mission.start)}`}
                         >
-                          {option.result.mission.name} ·{" "}
+                          {siteLocationName(option.result.mission, area?.centre ?? original.mission)} ·{" "}
                           {option.result.mission.start.slice(0, 10)} ×
                         </button>
                       ))}

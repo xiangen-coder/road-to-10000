@@ -26,6 +26,7 @@ import { solarEnergy, type SolarSettings } from "./mission-lab/scenario-science"
 import type { Site } from "../app/types";
 import { horizonLabel, missionKey } from "../lib/plan-b";
 import { formatCoordinates } from "../lib/format-coordinates";
+import { siteLocationName } from "../lib/site-location";
 import { quickMapSiteUrl } from "../lib/quickmap";
 import {
   inComparisonArea,
@@ -92,6 +93,7 @@ export default function ResearchOverview({
   onSelectAssessment,
   comparisonOrigin,
   assessedAreaCentre,
+  locationReference,
   comparisonRadiusKm,
   onNavigate,
   onSaveMission,
@@ -112,6 +114,7 @@ export default function ResearchOverview({
   onSelectAssessment: (assessment: Research) => void;
   comparisonOrigin: Site;
   assessedAreaCentre?: Site;
+  locationReference?: Site;
   comparisonRadiusKm?: number;
   onNavigate: (view: number) => void;
   onSaveMission: (assessment: Research) => void;
@@ -222,7 +225,7 @@ export default function ResearchOverview({
       <header className="research-results-heading">
         <div className="result-title-copy">
           <span className="eyebrow">LANDING ASSESSMENT</span>
-          <h1>{result?.mission.name || "Mission results"}</h1>
+          <h1>{result ? siteLocationName(result.mission, locationReference) : "Mission results"}</h1>
           {result && (
             <p className="result-title-details">
               <span>
@@ -233,7 +236,7 @@ export default function ResearchOverview({
               <span>{horizonLabel(result)} · {result.mission.interval_minutes} min sampling · {result.mission.clearance_deg}° Earth clearance</span>
             </p>
           )}
-          {assessedAreaCentre && <p>Search centre · {assessedAreaCentre.name} ({formatCoordinates(assessedAreaCentre.latitude, assessedAreaCentre.longitude)})</p>}
+          {assessedAreaCentre && <p>Search centre · {siteLocationName(assessedAreaCentre)} ({formatCoordinates(assessedAreaCentre.latitude, assessedAreaCentre.longitude)})</p>}
         </div>
         <div className="result-title-actions">
           <button type="button" className="button primary new-search" onClick={onNewSearch}>
@@ -258,12 +261,13 @@ export default function ResearchOverview({
                 }}
               >
                 {comparedAssessments.map(({ mission }) => {
+                  const name = siteLocationName(mission, locationReference);
+                  const coordinates = formatCoordinates(mission.latitude, mission.longitude);
                   const duplicates = comparedAssessments.some(({ mission: other }) =>
-                    other !== mission && other.name === mission.name &&
-                    other.latitude === mission.latitude && other.longitude === mission.longitude);
+                    other !== mission && siteLocationName(other, locationReference) === name);
                   return (
                     <option key={missionKey(mission)} value={missionKey(mission)}>
-                      {mission.name.trim() || "Custom location"} · {formatCoordinates(mission.latitude, mission.longitude)}
+                      {name}{name !== coordinates && ` · ${coordinates}`}
                       {duplicates && ` · ${utc(mission.start)}`}
                     </option>
                   );
@@ -892,6 +896,7 @@ export default function ResearchOverview({
           <ResearchComparisonReport
             singleMission
             mission={result.mission}
+            locationReference={locationReference}
             alternatives={[]}
             comparison={{ results: [result], candidates: [], busy: false, progress: "", error: "", failures: {} }}
             scenarios={[]}

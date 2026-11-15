@@ -1091,7 +1091,7 @@ export default function Page() {
               setResearchResult(r);
               setView(8);
             }} onSearch={()=>setView(7)} onCancel={cancelComparison}/>}
-          {view===11&&<ResearchComparisonReport key={missionKey(comparisonMission)} mission={comparisonMission} alternatives={searchRecord.alternatives} comparison={comparisonState} scenarios={comparisonScenarios} evidenceSite={reportSite} onEvidenceSiteChange={setReportSite} onInspect={result=>{setResearchResult(result);setView(8);}} equipment={researchEquipment}/>}
+          {view===11&&<ResearchComparisonReport key={missionKey(comparisonMission)} mission={comparisonMission} locationReference={comparisonOrigin} alternatives={searchRecord.alternatives} comparison={comparisonState} scenarios={comparisonScenarios} evidenceSite={reportSite} onEvidenceSiteChange={setReportSite} onInspect={result=>{setResearchResult(result);setView(8);}} equipment={researchEquipment}/>}
           {view===13&&<Account onOpenPowerReport={(source) => { setLabSource(source); setOpenSavedLabReport(true); setLabReportVersion((version) => version + 1); setView(12); }} onSignedIn={missionToSave ? async () => {
               await saveMission(missionToSave);
               setMissionSaveStatus({ assessment: missionToSave.snapshot.assessment, status: "saved" });
@@ -1108,10 +1108,10 @@ export default function Page() {
             }
             setView(8);
           }} onConfigure={openSearchForm}/></div>}
-          {view===8&&assessmentAvailable&&<ResearchOverview key={JSON.stringify(displayedResult?.mission)} result={displayedResult} comparedAssessments={comparedAssessments} onSelectAssessment={assessment=>{
+          {view===8&&assessmentAvailable&&<ResearchOverview key={displayedResult && missionKey(displayedResult.mission)} result={displayedResult} comparedAssessments={comparedAssessments} onSelectAssessment={assessment=>{
             focusComparedSites.current = true;
             setResearchResult(assessment);
-          }} onNewSearch={startNewAssessmentSearch} comparisonOrigin={comparisonOrigin} assessedAreaCentre={assessedAreaCentre} comparisonRadiusKm={comparisonRadius} onNavigate={setView} onRunAgain={reopenedMission ? async () => {
+          }} onNewSearch={startNewAssessmentSearch} comparisonOrigin={comparisonOrigin} assessedAreaCentre={assessedAreaCentre} locationReference={reopenedMission ? undefined : comparisonOrigin} comparisonRadiusKm={comparisonRadius} onNavigate={setView} onRunAgain={reopenedMission ? async () => {
             if (rerunningMission) return;
             const controller = new AbortController();
             rerunRequest.current = controller;

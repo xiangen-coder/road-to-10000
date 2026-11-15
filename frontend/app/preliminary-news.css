@@ -138,6 +138,9 @@
 .what-if-options tr.is-selected { background: #a5bee62e; }
 .what-if-options small,
 .what-if-selection small { display: block; color: #b2c5e1; }
+.what-if-options tbody th[scope="row"] > small:first-of-type {
+  white-space: nowrap;
+}
 .plan-b-card .what-if-options input { width: auto; }
 .what-if-options td[colspan] > p { white-space: normal; }
 .what-if-comparison-details { padding: 14px; margin-top: 12px; }

@@ -1,21 +1,12 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import type { Mission, Site } from "../app/types";
+import { comparisonDistanceKm, comparisonRadiusKm, siteLocationName } from "../lib/site-location";
 export { terrainReference } from "../lib/reference-sites";
+export { comparisonDistanceKm, comparisonRadiusKm } from "../lib/site-location";
 
 export const siteKey = (s: Site) =>
   `${s.latitude.toFixed(6)},${(Math.abs(s.latitude) === 90 ? 0 : s.longitude === 180 ? -180 : s.longitude).toFixed(6)}`;
-
-export const comparisonRadiusKm = 20;
-export function comparisonDistanceKm(first: Site, candidate: Site) {
-  const radians = Math.PI / 180;
-  const latitude = first.latitude * radians;
-  const otherLatitude = candidate.latitude * radians;
-  const halfLongitudeDifference = (candidate.longitude - first.longitude) * radians / 2;
-  const haversine = Math.sin((otherLatitude - latitude) / 2) ** 2
-    + Math.cos(latitude) * Math.cos(otherLatitude) * Math.sin(halfLongitudeDifference) ** 2;
-  return 2 * 1737.4 * Math.asin(Math.sqrt(Math.min(1, haversine)));
-}
 
 export function inComparisonArea(first: Site, candidate: Site, radiusKm = comparisonRadiusKm) {
   return comparisonDistanceKm(first, candidate) <= radiusKm + 1e-6;
@@ -76,6 +67,7 @@ export default function ComparisonPicker({
   const [lon, setLon] = useState("");
   const [error, setError] = useState("");
   const key = siteKey(baseline);
+  const locationName = (site: Site) => siteLocationName(site, mission);
   const selected = chosen.filter((s) => siteKey(s) !== key && inComparisonArea(mission, s, radiusKm));
   const searchKey = JSON.stringify([mission, radiusKm, limits]);
   const screened = suggestions?.key === searchKey ? suggestions.data : undefined;
@@ -146,7 +138,7 @@ export default function ComparisonPicker({
       open
     >
       <summary>Choose alternative sites</summary>
-      <p>{mission.name} is the centre of the {radiusKm} km search. Added points use the original mission window.</p>
+      <p>{locationName(mission)} is the centre of the {radiusKm} km search. Added points use the original mission window.</p>
       <div className="account-actions">
         <button
           className="button subtle"
@@ -168,7 +160,7 @@ export default function ComparisonPicker({
           {screened.candidates.map((c) => (
             <div key={siteKey(c.location)} className="saved-search comparison-suggestion">
               <span>
-                {c.location.name} · {Math.round(c.distance_m)} m away
+                {locationName(c.location)} · {Math.round(c.distance_m)} m away
                 {c.terrain_score_change == null
                   ? ""
                   : ` · ${c.terrain_score_change > 0 ? "+" : ""}${c.terrain_score_change.toFixed(1)} terrain points`}
@@ -182,7 +174,7 @@ export default function ComparisonPicker({
               <p>Nominal terrain checks passed. Apollo footprint and uncertainty evidence is incomplete.</p>
               {screened.exploration_candidates.map((c) => (
                 <div key={siteKey(c.location)} className="saved-search comparison-suggestion">
-                  <span>{c.location.name} · {c.resolution_m} m DEM · {c.slope_p95_deg.toFixed(1)}° p95 slope</span>
+                  <span>{locationName(c.location)} · {c.resolution_m} m DEM · {c.slope_p95_deg.toFixed(1)}° p95 slope</span>
                   {suggestionAction(c.location, "Add for comparison")}
                 </div>
               ))}
@@ -194,7 +186,7 @@ export default function ComparisonPicker({
               <p>Terrain evidence is incomplete. Compare these points for sunlight and Earth-centre visibility.</p>
               {screened.comparison_candidates.map((candidate) => (
                 <div key={siteKey(candidate.location)} className="saved-search comparison-suggestion">
-                  <span>{candidate.location.name} · {candidate.location.latitude.toFixed(5)}°, {candidate.location.longitude.toFixed(5)}°</span>
+                  <span>{locationName(candidate.location)} · {candidate.location.latitude.toFixed(5)}°, {candidate.location.longitude.toFixed(5)}°</span>
                   {suggestionAction(candidate.location, "Add for comparison")}
                 </div>
               ))}
@@ -205,7 +197,7 @@ export default function ComparisonPicker({
               <summary>Points that exceeded terrain limits</summary>
               {screened.inspection_candidates.map((c) => (
                 <div key={siteKey(c.location)} className="saved-search comparison-suggestion">
-                  <span>{c.location.name} · {c.assessment.constraints_failed.join(" ")}</span>
+                  <span>{locationName(c.location)} · {c.assessment.constraints_failed.join(" ")}</span>
                   {suggestionAction({ ...c.location, name: c.location.name.replace("Backup terrain candidate", "Rejected terrain point") }, "Compare rejected point")}
                 </div>
               ))}
@@ -262,13 +254,13 @@ export default function ComparisonPicker({
       {selected.filter((site) => !suggestedKeys.has(siteKey(site))).map((s) => (
         <div key={siteKey(s)} className="saved-search">
           <span>
-            {s.name} · {s.latitude.toFixed(5)}°, {s.longitude.toFixed(5)}°
+            {locationName(s)} · {s.latitude.toFixed(5)}°, {s.longitude.toFixed(5)}°
           </span>
           <button
             className="button subtle"
             disabled={busy}
             onClick={() => remove(s)}
-            aria-label={`Remove ${s.name}`}
+            aria-label={`Remove ${locationName(s)}`}
           >
             Remove
           </button>

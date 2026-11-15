@@ -2,6 +2,7 @@
 
 import { downloadReport } from "../lib/download-report";
 import { formatCoordinates } from "../lib/format-coordinates";
+import { siteLocationName } from "../lib/site-location";
 import { useState } from "react";
 import type { Mission, Site } from "../app/types";
 import type { Research, ResearchComparison, ResearchSpan } from "./LandingResearch";
@@ -79,8 +80,9 @@ const csvCell = (value: string) => {
   return `"${safe.replaceAll('"', '""')}"`;
 };
 
-export default function ResearchComparisonReport({ mission, alternatives, comparison, scenarios, evidenceSite, onEvidenceSiteChange, onInspect, equipment = defaultSolar, singleMission = false }: {
+export default function ResearchComparisonReport({ mission, alternatives, comparison, scenarios, evidenceSite, onEvidenceSiteChange, onInspect, equipment = defaultSolar, singleMission = false, locationReference }: {
   mission: Mission;
+  locationReference?: Site;
   alternatives: Site[];
   comparison: ResearchComparison | null;
   scenarios: PlanBForecast[];
@@ -108,9 +110,13 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
   const eligible = complete.filter((r) => !r.constraints_failed.length);
   const choice = eligible.find((r) => missionKey(r.mission) === preferred);
   const evidence = complete.find((r) => missionKey(r.mission) === evidenceSite) ?? complete[0];
-  const label = (point: Mission) => entries.some((entry) => entry.mission.name === point.name && !sameMission(entry.mission, point))
-    ? `${point.name} · ${utc(point.start)}`
-    : point.name;
+  const locationName = (point: Mission) => siteLocationName(point, locationReference);
+  const label = (point: Mission) => {
+    const name = locationName(point);
+    return entries.some((entry) => locationName(entry.mission) === name && !sameMission(entry.mission, point))
+      ? `${name} · ${utc(point.start)}`
+      : name;
+  };
   const assessmentStatus = (entry: (typeof entries)[number]) => {
     if (entry.scenario?.reasons.length) return "What IF forecast · landing checks unresolved or exceeded";
     if (entry.assessment) return entry.scenario ? "What IF assessment" : "Assessed";
@@ -251,7 +257,7 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
       <div className="report-option-grid">
         {entries.map(({ mission: point, assessment }, index) => (
           <article className={`report-option report-option-${index}`} key={missionKey(point)}>
-            <h3>{point.name}{!singleMission && index === baseIndex && " · Baseline"}</h3>
+            <h3>{locationName(point)}{!singleMission && index === baseIndex && " · Baseline"}</h3>
             <p>{formatCoordinates(point.latitude, point.longitude)} · {format(duration(point), " h")}</p>
             {!sharedWindow && <p>{utc(point.start)} → {utc(point.end)}</p>}
             <p>{assessmentStatus(entries[index])}</p>

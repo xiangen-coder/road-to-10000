@@ -2,6 +2,18 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import type { Mission } from "../app/types";
 import { calendarEnd, searchDates } from "../lib/plan-b";
+import { siteLocationName } from "../lib/site-location";
+
+test("location labels reuse assessment names and resolve unnamed sites from coordinates", () => {
+  const centre = { name: "Survey ridge", latitude: 0, longitude: 179.99 };
+  const point = { name: "Custom location", latitude: 0, longitude: -179.99 };
+  expect(siteLocationName(point, centre)).toBe("0.61 km east of Survey ridge");
+  expect(siteLocationName({ ...centre, name: "Custom location" }, centre)).toBe("Survey ridge");
+  expect(siteLocationName({ ...point, name: "Crew training site" }, centre)).toBe("Crew training site");
+  expect(siteLocationName({ ...point, name: "0.61 km east of Survey ridge" }, centre)).toBe("0.61 km east of Survey ridge");
+  expect(siteLocationName(point)).toBe("0.0000° N, 179.9900° W");
+  expect(siteLocationName({ name: "Custom location", latitude: -89.54, longitude: 0 })).toBe("Shackleton vicinity");
+});
 
 const start = "2026-10-01T00:00:00Z";
 const end = "2026-10-02T00:00:00Z";
@@ -168,11 +180,12 @@ test("delay search samples then refines, ranks by score and preserves the origin
     expect(body.limits).toEqual(limits);
     expect(body.allow_remote_terrain).toBe(false);
     candidates.push(body.mission);
-    await route.fulfill({ json: { status: "evaluated", result: evidence(body.mission, candidates.length) } });
+    await route.fulfill({ json: { status: "evaluated", result: evidence({ ...body.mission, name: "Custom location" }, candidates.length) } });
   });
   const plan = await openCompare(page);
   const original = page.getByRole("article", { name: /Highest-scoring point evaluated:/ });
   const criteria = original.getByRole("region", { name: "Criteria at a glance" });
+  await expect(original.locator("header")).toContainText("Coordinates · 89.5400° S, 0.0000° E");
   await expect(criteria.getByRole("meter", { name: "Water-ice potential" })).toHaveCount(0);
   await expect(criteria.getByRole("meter", { name: "Temperature" })).toHaveCount(0);
   const searchLimitations = original.getByText("1 of 17 sampled points returned a score.", { exact: false });
@@ -189,6 +202,11 @@ test("delay search samples then refines, ranks by score and preserves the origin
   expect(candidates.some((mission) => mission.start.startsWith("2026-11-01"))).toBeTruthy();
   expectMissionSettings(candidates);
   await expect(plan.getByRole("table").first()).toContainText("2026-10-02 00:00:00 UTC");
+  const locationCells = plan.getByRole("table", { name: "Suggested plans" }).locator('tbody th[scope="row"]');
+  for (const cell of await locationCells.all()) {
+    await expect(cell).toContainText("Shackleton vicinity");
+    await expect(cell.locator("small").first()).toContainText("UTC");
+  }
   await plan.getByRole("button", { name: /Details for.*2026-10-02/ }).click();
   await expect(plan.getByText("Scores are incomparable because evidence coverage differs.").first()).toBeVisible();
   await plan.getByText("Mission, terrain and ice details", { exact: true }).first().click();
@@ -211,7 +229,7 @@ test("location and combined searches keep the baseline and enforce the selected 
     await route.fulfill({ json: { searched: 3, overlap_excluded: 0, outside_or_missing: 0,
       failed_limits: 0, passing_terrain_candidates: 3,
       candidates: [
-        { location: { name: "Near A", latitude: mission.latitude + 0.01, longitude: mission.longitude } },
+        { location: { name: "Custom location", latitude: mission.latitude + 0.01, longitude: mission.longitude } },
         { location: { name: longName, latitude: mission.latitude + 0.02, longitude: mission.longitude } },
         { location: { name: "Far", latitude: 0, longitude: 0 } },
       ] } });
@@ -248,9 +266,10 @@ test("location and combined searches keep the baseline and enforce the selected 
   await plan.getByRole("button", { name: /^Details for/ }).first().click();
   await expect(plan.getByRole("table").nth(1)).toBeVisible();
   await expect.poll(() => plan.evaluate((card) => card.scrollWidth <= card.clientWidth)).toBe(true);
-  const choices = plan.getByRole("checkbox", { name: /^Select / });
-  await choices.nth(0).check();
-  await choices.nth(1).check();
+  const namedPoint = plan.getByRole("checkbox", { name: /^Select Near B/ }).first();
+  const descriptivePoint = plan.getByRole("checkbox", { name: /^Select 0\.3 km north of Shackleton vicinity/ }).first();
+  await namedPoint.check();
+  await descriptivePoint.check();
   await expect(plan.getByText("2 alternatives selected")).toBeVisible();
   await plan.getByRole("button", { name: "Compare selected (3)" }).click();
   const cards = page.getByRole("region", { name: "Comparison cards" });
@@ -261,8 +280,13 @@ test("location and combined searches keep the baseline and enforce the selected 
   await expect(cards.getByRole("meter", { name: "Water-ice potential" })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to options" }).click();
   await expect(plan.getByRole("table", { name: "Suggested plans" })).toBeVisible();
-  await expect(choices.nth(0)).toBeChecked();
-  await expect(choices.nth(1)).toBeChecked();
+  await expect(namedPoint).toBeChecked();
+  await expect(descriptivePoint).toBeChecked();
+  await page.getByRole("button", { name: "Compare added plans (3)" }).click();
+  await cards.getByRole("article", { name: /Alternative \d: 0\.3 km north of Shackleton vicinity/ })
+    .getByRole("button", { name: "View assessment" }).click();
+  await expect(page.getByRole("heading", { name: "0.3 km north of Shackleton vicinity", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Compared sites").locator("option:checked")).toContainText("0.3 km north of Shackleton vicinity");
 });
 
 test("suggests comparison points around the first selected site when terrain is missing", async ({ page }) => {
