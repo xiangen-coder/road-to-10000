@@ -1,0 +1,17 @@
+name: Keep Render service alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render and log HTTP status
+        run: |
+          curl -I -s -S https://lunar-navigator-xiangen.onrender.com/ \
+            --max-time 90 --output /dev/null --write-out 'HTTP status: %{http_code}\n'
