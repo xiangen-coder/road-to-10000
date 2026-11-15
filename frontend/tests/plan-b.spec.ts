@@ -185,7 +185,9 @@ test("delay search samples then refines, ranks by score and preserves the origin
   const plan = await openCompare(page);
   const original = page.getByRole("article", { name: /Highest-scoring point evaluated:/ });
   const criteria = original.getByRole("region", { name: "Criteria at a glance" });
-  await expect(original.locator("header")).toContainText("Coordinates · 89.5400° S, 0.0000° E");
+  const coordinates = original.locator("header .pre-result-coordinates");
+  await expect(coordinates.locator("dt")).toHaveText(["Latitude", "Longitude"]);
+  await expect(coordinates.locator("dd")).toHaveText(["89.540° S", "0.000° E"]);
   await expect(criteria.getByRole("meter", { name: "Water-ice potential" })).toHaveCount(0);
   await expect(criteria.getByRole("meter", { name: "Temperature" })).toHaveCount(0);
   const searchLimitations = original.getByText("1 of 17 sampled points returned a score.", { exact: false });
@@ -213,6 +215,7 @@ test("delay search samples then refines, ranks by score and preserves the origin
   await plan.getByRole("button", { name: /^Details for/ }).first().click();
   expect(await original.innerText()).toBe(originalText);
   await page.setViewportSize({ width: 390, height: 850 });
+  await expect(coordinates).toBeVisible();
   await plan.scrollIntoViewIfNeeded();
   const mobile = await plan.boundingBox();
   expect(mobile!.x).toBeGreaterThanOrEqual(0);

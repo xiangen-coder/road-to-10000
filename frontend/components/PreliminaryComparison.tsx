@@ -197,13 +197,10 @@ export default function PreliminaryComparison({
             {searchingArea ? (
               <p role="status"><span className="pre-result-spinner" aria-hidden="true" />Searching the research area…</p>
             ) : (
-              <>
-                {(!area || result || comparing) && locationName !== coordinates && <p>{locationName}</p>}
-                {!comparing && isSelected && result && <p>Coordinates · {coordinates}</p>}
-              </>
+              (!area || result || comparing) && locationName !== coordinates && <p>{locationName}</p>
             )}
           </div>
-          {comparing && (
+          {(comparing || (isSelected && result && !searchingArea)) && (
             <dl className="pre-result-coordinates">
               <div>
                 <dt>Latitude</dt>
