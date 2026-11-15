@@ -1,5 +1,5 @@
 "use client";
-import { formatCoordinates } from "../lib/format-coordinates";
+import { formatCoordinateParts, formatCoordinates } from "../lib/format-coordinates";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Mission, Site } from "../app/types";
@@ -145,6 +145,7 @@ export default function PreliminaryComparison({
     const isSelected = index === 0;
     const locationName = siteLocationName(site, area?.centre ?? mission);
     const coordinates = formatCoordinates(site.latitude, site.longitude);
+    const coordinateParts = formatCoordinateParts(site.latitude, site.longitude, 3);
     const title = isSelected
       ? area && hasResults
         ? hasRecommendation ? (priority === "overall" ? "Highest-scoring point evaluated" : "Highest-ranked point evaluated") : "Point for inspection"
@@ -191,14 +192,28 @@ export default function PreliminaryComparison({
         aria-label={`${title}: ${locationName}`}
       >
         <header className="pre-result-heading">
-          <h2>{title}</h2>
-          {searchingArea ? (
-            <p role="status"><span className="pre-result-spinner" aria-hidden="true" />Searching the research area…</p>
-          ) : (
-            <>
-              {(!area || result) && (!isSelected || locationName !== coordinates) && <p>{locationName}</p>}
-              {isSelected && result && <p>Coordinates · {coordinates}</p>}
-            </>
+          <div className="pre-result-location">
+            <h2>{title}</h2>
+            {searchingArea ? (
+              <p role="status"><span className="pre-result-spinner" aria-hidden="true" />Searching the research area…</p>
+            ) : (
+              <>
+                {(!area || result || comparing) && locationName !== coordinates && <p>{locationName}</p>}
+                {!comparing && isSelected && result && <p>Coordinates · {coordinates}</p>}
+              </>
+            )}
+          </div>
+          {comparing && (
+            <dl className="pre-result-coordinates">
+              <div>
+                <dt>Latitude</dt>
+                <dd>{coordinateParts.latitude}</dd>
+              </div>
+              <div>
+                <dt>Longitude</dt>
+                <dd>{coordinateParts.longitude}</dd>
+              </div>
+            </dl>
           )}
           {comparing && (
             <dl className="what-if-card-window">
@@ -220,12 +235,12 @@ export default function PreliminaryComparison({
               </div>
             </dl>
           )}
-          {scenario && (
-            <span className="eyebrow">
-              {scenario.reasons.length
-                ? "WHAT IF FORECAST"
-                : "WHAT IF SCENARIO"}
-            </span>
+          {(scenario || comparing) && (
+            <div className="pre-result-scenario">
+              {scenario && <span className="eyebrow">
+                {scenario.reasons.length ? "WHAT IF FORECAST" : "WHAT IF SCENARIO"}
+              </span>}
+            </div>
           )}
         </header>
         <div className="pre-score">
@@ -295,6 +310,7 @@ export default function PreliminaryComparison({
             Percentages show availability. Values out of 100 are factor scores.
           </p>
         </section>
+        <div className="pre-result-support">
         <details className="pre-extra pre-environment">
           <summary>Environment &amp; limits</summary>
           <dl>
@@ -515,6 +531,7 @@ export default function PreliminaryComparison({
             </button>
           )}
         </div>
+        </div>
       </article>
     );
   }
@@ -630,7 +647,7 @@ export default function PreliminaryComparison({
           )
         )}
         <div
-          className={`pre-result-grid${comparing ? "" : " what-if-browsing"}`}
+          className={`pre-result-grid ${comparing ? "selected-plan-grid" : "what-if-browsing"}`}
           role="region"
           aria-label="Comparison cards"
           tabIndex={0}

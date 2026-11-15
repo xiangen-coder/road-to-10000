@@ -274,9 +274,26 @@ test("location and combined searches keep the baseline and enforce the selected 
   await plan.getByRole("button", { name: "Compare selected (3)" }).click();
   const cards = page.getByRole("region", { name: "Comparison cards" });
   await expect(cards.getByRole("article")).toHaveCount(3);
+  await expect(cards.locator(".pre-result-coordinates")).toHaveCount(3);
+  await expect(original.locator(".pre-result-coordinates")).toHaveText(/Latitude89\.540° SLongitude0\.000° E/);
+  await expect(cards.getByRole("article", { name: /Alternative \d: 0\.3 km north/ })
+    .locator(".pre-result-coordinates")).toContainText("89.530° S");
+  await expect.poll(async () => {
+    const bounds = await cards.locator(".pre-result-card").evaluateAll((items) => items.map((item) => item.getBoundingClientRect().top));
+    return bounds[0] < bounds[1] && bounds[1] < bounds[2];
+  }).toBe(true);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  for (const selector of [".pre-result-coordinates", ".what-if-card-window", ".pre-score", ".pre-criteria"]) {
+    await expect.poll(async () => {
+      const top = await cards.locator(`.pre-result-card ${selector}`).evaluateAll((items) =>
+        items.map((item) => item.getBoundingClientRect().top));
+      return Math.max(...top) - Math.min(...top);
+    }).toBeLessThan(1);
+  }
   await expect(original).toBeVisible();
   await expect(page.locator(".research-centre-summary")).toContainText("5 km");
   await page.getByRole("checkbox", { name: "Show differences only" }).check();
+  await expect(cards.locator(".pre-result-coordinates:visible")).toHaveCount(3);
   await expect(cards.getByRole("meter", { name: "Water-ice potential" })).toHaveCount(0);
   await page.getByRole("button", { name: "Back to options" }).click();
   await expect(plan.getByRole("table", { name: "Suggested plans" })).toBeVisible();

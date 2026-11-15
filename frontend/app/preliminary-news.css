@@ -153,6 +153,52 @@
   padding: 2px 0;
 }
 .what-if-card-window dt { margin: 0; align-self: center; }
+.pre-result-card .pre-result-coordinates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 10px 16px;
+  margin-block: 14px;
+}
+.pre-result-card .pre-result-coordinates > div {
+  border: 0;
+  padding: 0;
+}
+.pre-result-card .pre-result-coordinates dt {
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.pre-result-card .pre-result-coordinates dd {
+  color: #fff;
+  font-size: clamp(24px, 2vw, 28px);
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1051px) {
+  .selected-plan-grid {
+    grid-auto-columns: minmax(0, 1fr);
+    row-gap: 0;
+    align-items: stretch;
+    overflow: visible;
+  }
+  .selected-plan-grid > .pre-result-card,
+  .selected-plan-grid .pre-result-heading,
+  .selected-plan-grid .what-if-card-window {
+    display: grid;
+    grid-template-rows: subgrid;
+  }
+  /* Share row heights for the title, coordinates, three mission details, scenario, score, criteria and supporting details. */
+  .selected-plan-grid > .pre-result-card { grid-row: 1 / span 9; }
+  .selected-plan-grid .pre-result-heading { grid-row: span 6; }
+  .selected-plan-grid .what-if-card-window { grid-row: span 3; }
+}
+@media (max-width: 1050px) {
+  .selected-plan-grid {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+}
 .pre-result-card {
   display: flex;
   flex-direction: column;
