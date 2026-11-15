@@ -6,7 +6,7 @@ An exploratory NASA Space Apps 2026 project for lunar south pole sunlight and Ea
 
 **Scientific status:** an exploratory demonstrator. The public research registry includes a 5 m Connecting Ridge footprint crop and a wider 20 m south-pole DEM for finite horizons. The map combines a coordinate graticule with a selected-point LROC image preview and native terrain diagnostics when available. Footprint coverage is regional. Comprehensive hazards and numeric ice data are unavailable. The legacy SPICE workflow retains its separate optional DEM configuration. See [research methods](docs/LUNAR_RESEARCH.md), [terrain coverage](docs/WIDE_TERRAIN.md), and [the mission workflow](docs/MISSION_WORKFLOW.md).
 
-## Run locally
+## Run Locally
 
 Requirements: Python 3.12, Node.js 22 or newer, npm. Linux x86_64 is the validated platform.
 
