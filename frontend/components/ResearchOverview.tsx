@@ -28,6 +28,7 @@ import { horizonLabel, missionKey } from "../lib/plan-b";
 import { formatCoordinates } from "../lib/format-coordinates";
 import { siteLocationName } from "../lib/site-location";
 import { quickMapSiteUrl } from "../lib/quickmap";
+import type { SearchLimitations } from "../lib/research-area";
 import {
   inComparisonArea,
   siteKey,
@@ -89,6 +90,7 @@ function openResultSection(id: string) {
 }
 export default function ResearchOverview({
   result,
+  searchLimitations,
   comparedAssessments,
   onSelectAssessment,
   comparisonOrigin,
@@ -110,6 +112,7 @@ export default function ResearchOverview({
   busy = false,
 }: {
   result: Research | null;
+  searchLimitations?: SearchLimitations;
   comparedAssessments: Research[];
   onSelectAssessment: (assessment: Research) => void;
   comparisonOrigin: Site;
@@ -800,6 +803,30 @@ export default function ResearchOverview({
                   </article>
                 );
               })}
+              {searchLimitations && (
+                <article>
+                  <h4><ClipboardList aria-hidden="true" /> Search limitations</h4>
+                  <p>
+                    {searchLimitations.counts.evaluated} of {searchLimitations.sampled} sampled points returned a score.
+                    {" "}{searchLimitations.counts.limits} scored points exceeded configured limits.
+                  </p>
+                  {searchLimitations.counts.missing > 0 && (
+                    <p>Points checked without a score: {searchLimitations.counts.missing}.</p>
+                  )}
+                  {searchLimitations.counts.unavailable > 0 && (
+                    <p>Points skipped after the search reached its time limit: {searchLimitations.counts.unavailable}.</p>
+                  )}
+                  {searchLimitations.counts.evaluated < searchLimitations.sampled && (
+                    <p>Unscored points could rank higher if assessed successfully.</p>
+                  )}
+                  {searchLimitations.recommended !== false && searchLimitations.counts.limits > 0 && (
+                    <p>The original search selected the highest-ranked scored point with no measured limit failures.</p>
+                  )}
+                  {searchLimitations.recommended === false && (
+                    <p>No evaluated point qualified for recommendation.</p>
+                  )}
+                </article>
+              )}
             </div>
             {result.limitations.filter((item) => !limitationGroups.some(({ matches }) => matches.test(item))).map((item) => <p key={item}>{item}</p>)}
           </section>

@@ -1,3 +1,5 @@
+export type AccountUser = { id: string; email?: string; username: string };
+
 export class AccountApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);

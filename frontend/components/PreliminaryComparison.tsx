@@ -311,30 +311,6 @@ export default function PreliminaryComparison({
         <details className="pre-extra pre-environment">
           <summary>Environment &amp; limits</summary>
           <dl>
-            {isSelected && areaResult && !searchingArea && (
-              <div>
-                <dt>Search limitations</dt>
-                <dd>
-                  {areaResult.counts.evaluated} of {areaResult.sampled} sampled points returned a score.
-                  {" "}{areaResult.counts.limits} scored points exceeded configured limits.
-                </dd>
-                {areaResult.counts.missing > 0 && (
-                  <dd>Points checked without a score: {areaResult.counts.missing}.</dd>
-                )}
-                {areaResult.counts.unavailable > 0 && (
-                  <dd>Points skipped after the search reached its time limit: {areaResult.counts.unavailable}.</dd>
-                )}
-                {areaResult.counts.evaluated < areaResult.sampled && (
-                  <dd>Unscored points could rank higher if assessed successfully.</dd>
-                )}
-                {hasRecommendation && areaResult.counts.limits > 0 && (
-                  <dd>This point ranked first among scored points with no measured limit failures.</dd>
-                )}
-                {!hasRecommendation && hasResults && (
-                  <dd>No evaluated point qualified for recommendation.</dd>
-                )}
-              </div>
-            )}
             {area && !searchingArea && (
               <div>
                 <dt>Assessed point</dt>

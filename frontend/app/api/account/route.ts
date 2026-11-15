@@ -1,25 +1,33 @@
 import { accountClient, json, validOrigin } from "../../../lib/account-server";
+import { isAuthSessionMissingError, type User } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
+
+function accountUser(user: User | null) {
+  if (!user) return null;
+  const username = user.user_metadata?.username;
+  return {
+    id: user.id,
+    email: user.email,
+    username:
+      (typeof username === "string" ? username.trim().slice(0, 32) : "") ||
+      user.email?.split("@")[0]?.slice(0, 32) ||
+      "Explorer",
+  };
+}
 
 export async function GET() {
   try {
     const client = await accountClient();
     const {
       data: { user },
+      error,
     } = await client.auth.getUser();
-    const username = user?.user_metadata?.username;
-    return json({
-      user: user
-        ? {
-            id: user.id,
-            email: user.email,
-            username:
-              (typeof username === "string" ? username.trim().slice(0, 32) : "") ||
-              user.email?.split("@")[0]?.slice(0, 32) ||
-              "Explorer",
-          }
-        : null,
-    });
+    if (error && !isAuthSessionMissingError(error) && ![
+      "session_not_found", "session_expired", "refresh_token_not_found", "refresh_token_already_used",
+    ].includes(error.code ?? "")) {
+      return json({ error: "Could not verify your session. Please retry." }, 503);
+    }
+    return json({ user: accountUser(user) });
   } catch {
     return json({ error: "Account service is temporarily unavailable." }, 503);
   }
@@ -88,6 +96,7 @@ export async function POST(request: Request) {
     if (result.error) return json({ error: result.error.message }, 400);
     return json({
       ok: true,
+      user: accountUser(result.data.session ? result.data.user : null),
       message:
         body.action === "signup" && !result.data.session
           ? "Check your email to confirm your account, then sign in."

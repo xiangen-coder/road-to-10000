@@ -32,3 +32,5 @@ export type ResearchAreaResult = {
   reasons: string[];
   counts: { evaluated: number; limits: number; missing: number; unavailable: number; focus_missing: number };
 };
+
+export type SearchLimitations = Pick<ResearchAreaResult, "sampled" | "counts" | "recommended">;

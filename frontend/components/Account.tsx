@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { accountApi as api } from "../lib/account-api";
+import { accountApi as api, type AccountUser } from "../lib/account-api";
 import { validRecord, type SearchRecord } from "../lib/search-record";
 
 import { listSavedPowerReports, type LabSource } from "../lib/mission-power";
@@ -35,19 +35,24 @@ export default function Account({
   onSignedIn,
   onOpenResult,
   onOpenPowerReport,
-  onUsernameChange,
+  user,
+  onUserChange,
+  sessionError,
+  onRetrySession,
 }: {
   onSignedIn?: () => Promise<void>;
   onOpenPowerReport: (source: LabSource) => void;
   onOpenResult: (record: SearchRecord, snapshot: MissionSnapshot) => void;
   onRestore: (record: SearchRecord) => void;
-  onUsernameChange: (username: string | null) => void;
+  user: AccountUser | null | undefined;
+  onUserChange: (user: AccountUser | null) => void;
+  sessionError: string;
+  onRetrySession: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
-  const [user, setUser] = useState<{ id: string; email: string } | null>(null);
   const [saved, setSaved] = useState<Saved[]>([]);
   const [powerReports, setPowerReports] = useState<ReturnType<typeof listSavedPowerReports>>([]);
   useEffect(() => {
@@ -56,23 +61,23 @@ export default function Account({
   }, []);
 
   const [action, setAction] = useState<Action>("login");
-  const [checkingSession, setCheckingSession] = useState(true);
-  const [busy, setBusy] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  async function refresh() {
-    const account = await api("");
-    setUser(account.user);
-    onUsernameChange(account.user?.username ?? null);
-    setSaved(
-      account.user
-        ? (await api("/history")).records.filter((r: Saved) =>
-            validRecord(r.payload),
-          )
-        : [],
-    );
-  }
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setLoadingHistory(true);
+    void api("/history")
+      .then(({ records }) => {
+        if (!cancelled) setSaved(records.filter((r: Saved) => validRecord(r.payload)));
+      })
+      .catch((e) => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoadingHistory(false); });
+    return () => { cancelled = true; };
+  }, [user]);
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.has("recovery")) setAction("update-password");
@@ -83,12 +88,6 @@ export default function Account({
     url.searchParams.delete("recovery");
     url.searchParams.delete("auth_error");
     history.replaceState(null, "", url);
-    void refresh()
-      .catch((e) => setError(e.message))
-      .finally(() => {
-        setCheckingSession(false);
-        setBusy(false);
-      });
   }, []);
 
   async function run(task: () => Promise<void>) {
@@ -121,13 +120,15 @@ export default function Account({
       setConfirmation("");
       setAction("login");
       setMessage(data.message);
-      try {
-        if (formAction === "login" && onSignedIn) {
-          await onSignedIn();
-          setMessage("Result saved to your account.");
+      if (formAction === "login" || formAction === "signup") {
+        try {
+          if (formAction === "login" && onSignedIn) {
+            await onSignedIn();
+            setMessage("Result saved to your account.");
+          }
+        } finally {
+          onUserChange(data.user === undefined ? (await api("")).user : data.user);
         }
-      } finally {
-        await refresh();
       }
     });
   }
@@ -155,9 +156,12 @@ export default function Account({
     </>
   );
 
-  if (checkingSession) {
-    return <section className="panel account-panel" aria-label="Lunar account" aria-busy="true">
-      <p role="status">Connecting to your account…</p>
+  if (user === undefined) {
+    return <section className="panel account-panel" aria-label="Lunar account" aria-busy={!sessionError}>
+      {sessionError ? <>
+        <p className="error" role="alert">{sessionError}</p>
+        <button className="button subtle" onClick={onRetrySession}>Retry</button>
+      </> : <p role="status">Connecting to your account…</p>}
     </section>;
   }
 
@@ -308,7 +312,7 @@ export default function Account({
           Open a saved result to see its assessment and charts. Earlier saved searches open in Configure.
         </p>
         {feedback}
-        {saved.length === 0 && !busy && <p>No saved results yet.</p>}
+        {saved.length === 0 && !busy && !loadingHistory && !error && <p>No saved results yet.</p>}
         {saved.map((r) => (
           <article key={r.id} className="saved-search">
             <div>
@@ -354,7 +358,7 @@ export default function Account({
             </div>
           </article>
         ))}
-        {busy && <small role="status">Connecting to your account…</small>}
+        {(busy || loadingHistory) && <small role="status">Connecting to your account…</small>}
       </section>
       <section className="panel account-panel" aria-labelledby="saved-reports-heading">
         <h2 id="saved-reports-heading">Saved mission reports</h2>
@@ -394,8 +398,7 @@ export default function Account({
           onClick={() =>
             void run(async () => {
               await api("", "POST", { action: "logout" });
-              setUser(null);
-              onUsernameChange(null);
+              onUserChange(null);
               setSaved([]);
             })
           }

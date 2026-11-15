@@ -359,7 +359,7 @@ export default function Navigation({
               }
             }}
           >
-            <span>{accountName ? `Hi, ${accountName}` : "Login"}</span>
+            <span>{accountName ? `Hi, ${accountName}` : accountName === null ? "Login" : "Account"}</span>
             {accountName && <ChevronDown size={14} aria-hidden="true" />}
           </button>
           {accountName && accountOpen && (

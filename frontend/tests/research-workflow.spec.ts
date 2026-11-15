@@ -3,6 +3,14 @@ import type { Mission } from "../app/types";
 
 test("adding three research sites shares the mission settings and exports their evidence", async ({ page }) => {
   const requests: Mission[] = [];
+  const user = { id: "test-user", username: "Explorer", email: "test@example.com" };
+  let sessionChecks = 0;
+  await page.route("**/api/account", (route) => {
+    if (route.request().method() === "POST") return route.fulfill({ json: { user, message: "Signed in." } });
+    sessionChecks++;
+    return route.fulfill({ json: { user: null } });
+  });
+  await page.route("**/api/account/history", (route) => route.fulfill({ json: { records: [] } }));
   // Test-only response fixture. Real Horizons and raster calculations are tested in the backend.
   await page.route(/\/api\/research\/(evaluate|research-area)$/, async (route) => {
     const { mission } = route.request().postDataJSON() as { mission: Mission };
@@ -38,17 +46,26 @@ test("adding three research sites shares the mission settings and exports their 
     };
     const areaSearch = route.request().url().endsWith("/research-area");
     await route.fulfill({ json: areaSearch ? {
-      results: [assessment], recommended: true, sampled: 1, reasons: [],
-      counts: { evaluated: 1, limits: 0, missing: 0, unavailable: 0, focus_missing: 0 },
+      results: [assessment], recommended: true, sampled: 4, reasons: [],
+      counts: { evaluated: 2, limits: 1, missing: 1, unavailable: 1, focus_missing: 0 },
     } : assessment });
   });
   await page.goto("/#search");
+  await page.getByRole("banner").getByRole("button", { name: "Login", exact: true }).click();
+  await page.getByLabel("Email address").fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill("test-password");
+  await page.locator(".lunar-auth-form").getByRole("button", { name: "Login", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Saved results" })).toBeVisible();
+  const checksAfterLogin = sessionChecks;
+  await page.getByRole("link", { name: "Configure", exact: true }).click();
   await page.locator("#landing-search-form").getByLabel("Centre name").selectOption({ label: "Shackleton vicinity" });
   await page.locator("#landing-search-form").getByLabel("Start date", { exact: true }).fill("2026-10-01");
   await page.locator("#landing-search-form").getByLabel("End date", { exact: true }).fill("2026-10-02");
   await page.locator("#landing-search-form").getByLabel("Start time (UTC)", { exact: true }).fill("00:00");
   await page.locator("#landing-search-form").getByLabel("End time (UTC)", { exact: true }).fill("00:00");
   await page.getByRole("button", { name: "Find landing point", exact: true }).click();
+  await expect(page).toHaveURL(/#pre-results$/);
+  await expect(page.getByText("Search limitations", { exact: true })).toHaveCount(0);
   await page.getByRole("article", { name: "What IF" }).getByText("Change location", { exact: true }).click();
   await page.getByText("Custom coordinates and terrain suggestions", { exact: true }).click();
   const picker = page.locator("#choose-comparison-sites");
@@ -111,6 +128,12 @@ test("adding three research sites shares the mission settings and exports their 
   await expect(page.getByRole("navigation", { name: "Main navigation" })).toBeHidden();
   await page.emulateMedia({ media: "screen" });
   await report.getByRole("article").filter({ has: page.getByRole("heading", { name: "Shackleton backup A · Baseline" }) }).getByRole("button", { name: /View assessment/ }).click();
+  const limitations = page.locator("#result-methods article").filter({ hasText: "Search limitations" });
+  await expect(limitations).toContainText("2 of 4 sampled points returned a score.");
+  await expect(limitations).toContainText("1 scored points exceeded configured limits.");
+  await expect(limitations).toContainText("Points checked without a score: 1.");
+  await expect(limitations).toContainText("Points skipped after the search reached its time limit: 1.");
+  await expect(limitations).toContainText("Unscored points could rank higher");
   const slider = page.getByRole("slider", { name: "Mission time" });
   await slider.fill("1");
   await expect(slider).toHaveAttribute("aria-valuetext", /02 Oct/);
@@ -137,9 +160,22 @@ test("adding three research sites shares the mission settings and exports their 
   await expect(page).toHaveURL(/#pre-results$/);
   await expect(table).toBeVisible();
   expect(requests).toHaveLength(3);
+  await page.evaluate(() => {
+    const observer = new MutationObserver(() => {
+      if (document.querySelector(".lunar-auth")) document.body.dataset.loginFlashed = "true";
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+  await page.getByRole("button", { name: "Hi, Explorer" }).click();
+  await page.getByRole("button", { name: "Account & saved missions" }).click();
+  await expect(page.getByRole("heading", { name: "Saved results" })).toBeVisible();
+  await expect(page.locator(".lunar-auth")).toHaveCount(0);
+  expect(await page.locator("body").getAttribute("data-login-flashed")).toBeNull();
+  expect(sessionChecks).toBe(checksAfterLogin);
 });
 
 test("Education shows the supplied Moon Landing 101 experience on mobile", async ({ page }) => {
+  await page.route("**/api/account", (route) => route.fulfill({ json: { user: null } }));
   await page.setViewportSize({ width: 390, height: 850 });
   await page.goto("/#education");
   const classroom = page.getByRole("region", { name: "Moon Landing 101 learning experience" });
@@ -288,6 +324,8 @@ test("header account dropdown supports saved searches and logout on desktop and 
   pendingSession = new Promise<void>((resolve) => { releaseSession = resolve; });
   try {
     await saved.click();
+    await expect(page.getByRole("heading", { name: "Saved results" })).toBeVisible();
+    await page.reload({ waitUntil: "domcontentloaded" });
     await expect(page.getByRole("status").filter({ hasText: "Connecting to your account" })).toBeVisible();
     await expect(page.locator("form").getByLabel("Password", { exact: true })).toHaveCount(0);
   } finally {
@@ -325,4 +363,5 @@ test("header account dropdown supports saved searches and logout on desktop and 
   await expect(logout).toBeHidden();
   await header.getByRole("button", { name: "Login" }).click();
   await expect(page).toHaveURL(/#account$/);
+  await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
 });

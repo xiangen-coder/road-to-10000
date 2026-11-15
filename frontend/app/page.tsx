@@ -17,7 +17,7 @@ import { PortableEducation, PortableJourney } from "../components/PortableLunar"
 import PreliminaryComparison from "../components/PreliminaryComparison";
 import ComparisonPicker, { inComparisonArea, siteKey } from "../components/ComparisonPicker";
 import { comparisonEntries, type ResearchArea, type ResearchAreaResult } from "../lib/research-area";
-import { accountApi, AccountApiError } from "../lib/account-api";
+import { accountApi, AccountApiError, type AccountUser } from "../lib/account-api";
 import type { MissionSnapshot } from "../lib/saved-mission";
 import type { SearchRecord } from "../lib/search-record";
 import { referenceSites } from "../lib/reference-sites";
@@ -484,18 +484,21 @@ function Timeline({ analysis }: { analysis: Analysis }) {
 
 export default function Page() {
   const [view, setViewState] = useState(7);
-  const [accountName, setAccountName] = useState<string | null>();
+  const [accountUser, setAccountUser] = useState<AccountUser | null>();
+  const [sessionError, setSessionError] = useState("");
+  const [sessionAttempt, setSessionAttempt] = useState(0);
+  const accountName = accountUser?.username ?? (accountUser === null ? null : undefined);
   useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/account", { cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const { user } = await response.json();
-        setAccountName((current) => current === undefined ? user?.username ?? null : current);
+    let cancelled = false;
+    void accountApi("")
+      .then(({ user }) => {
+        if (!cancelled) setAccountUser((current) => current === undefined ? user : current);
       })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
+      .catch(() => {
+        if (!cancelled) setSessionError("Could not verify your session. Please retry.");
+      });
+    return () => { cancelled = true; };
+  }, [sessionAttempt]);
   const [preferences,setPreferences] = useState<Preferences>({animate:true,scale:1,detailed:true});
   const [radiusKm, setRadiusKm] = useState(20);
   const [areaSearch, setAreaSearch] = useState<{
@@ -942,7 +945,10 @@ export default function Page() {
     if (savingMission.current || (missionSaveStatus?.assessment === assessment && missionSaveStatus.status === "saved")) return;
     const pending = {
       record: { ...(reopenedMission?.record ?? searchRecord), mission: assessment.mission, alternatives: [] },
-      snapshot: { version: 1 as const, assessment, equipment: researchEquipment },
+      snapshot: {
+        version: 1 as const, assessment, equipment: researchEquipment,
+        searchLimitations: assessment === displayedResult ? searchLimitations : undefined,
+      },
     };
     savingMission.current = true;
     setMissionSaveStatus({ assessment, status: "saving" });
@@ -952,7 +958,7 @@ export default function Page() {
     } catch (error) {
       setMissionSaveStatus({ assessment, status: "error", message: error instanceof Error ? error.message : "Unable to save this mission." });
       if (error instanceof AccountApiError && error.status === 401) {
-        setAccountName(null);
+        setAccountUser(null);
         setMissionToSave(pending);
         setView(13);
       }
@@ -999,6 +1005,12 @@ export default function Page() {
   const assessedAreaCentre = !reopenedMission && activeArea?.result && displayedResult &&
     (comparisonState?.results.includes(displayedResult) || comparisonScenarios.some(({ result }) => result === displayedResult))
     ? activeArea.area.centre : undefined;
+  const areaResultForAssessment = assessedAreaCentre ? activeArea?.result : undefined;
+  const searchLimitations = reopenedMission?.snapshot.searchLimitations ?? (areaResultForAssessment && {
+    sampled: areaResultForAssessment.sampled,
+    counts: areaResultForAssessment.counts,
+    recommended: areaResultForAssessment.recommended,
+  });
   function openAssessmentInPlanner(assessment: Research) {
     try {
       const imported = adaptAssessment(assessment, assessedAreaCentre);
@@ -1059,7 +1071,7 @@ export default function Page() {
   return (
     <div className={`app-shell lunar-app ${full?"full-view":"simple-view"}`} style={{"--ui-scale":preferences.scale} as CSSProperties}>
       <div className="stars" aria-hidden="true"/>
-      <Navigation view={view} education={education} compareAvailable={compareAvailable} resultAvailable={assessmentAvailable} plannerAvailable={plannerAvailable} accountName={accountName} onLogout={()=>{setAccountName(null);if(view===13)setView(7);}} onNavigate={next=>{
+      <Navigation view={view} education={education} compareAvailable={compareAvailable} resultAvailable={assessmentAvailable} plannerAvailable={plannerAvailable} accountName={accountName} onLogout={()=>{setAccountUser(null);if(view===13)setView(7);}} onNavigate={next=>{
         if (next === 12 && displayedResult && view !== 12) openAssessmentInPlanner(displayedResult);
         else setView(next);
       }} preferences={preferences} onPreferences={updatePreferences}/>
@@ -1097,7 +1109,7 @@ export default function Page() {
               setMissionSaveStatus({ assessment: missionToSave.snapshot.assessment, status: "saved" });
               setMissionToSave(null);
             } : undefined}
-            onOpenResult={(record, snapshot) => { setReopenedMission({ record, snapshot }); setResearchEquipment(snapshot.equipment); setView(8); }} onUsernameChange={setAccountName} onRestore={r=>{restoreMission(r.mission);setChosenAlternatives(r.alternatives);setResearchPriority(r.priority === "I" ? "I" : "overall");setRadiusKm(r.radiusKm ?? 20);areaRequest.current?.abort();setAreaSearch(undefined);setView(7);}}/>}
+            onOpenResult={(record, snapshot) => { setReopenedMission({ record, snapshot }); setResearchEquipment(snapshot.equipment); setView(8); }} user={accountUser} onUserChange={setAccountUser} sessionError={sessionError} onRetrySession={()=>{setSessionError("");setSessionAttempt(attempt=>attempt+1);}} onRestore={r=>{restoreMission(r.mission);setChosenAlternatives(r.alternatives);setResearchPriority(r.priority === "I" ? "I" : "overall");setRadiusKm(r.radiusKm ?? 20);areaRequest.current?.abort();setAreaSearch(undefined);setView(7);}}/>}
           {education&&<PortableEducation animate={preferences.animate}/>}
           {((view===12 && plannerAvailable) || labSource)&&<div hidden={view!==12 || !plannerAvailable}><PowerMissionLab onAiContextChange={setPlannerAiContext} key={JSON.stringify([labSource?.key, labReportVersion])} openSavedReport={openSavedLabReport} source={labSource} sourceError={labError} currentResult={displayedResult !== labSource?.assessment ? displayedResult : null} onUseCurrentResult={openAssessmentInPlanner} onResult={()=>{
             if (labSource && displayedResult !== labSource.assessment) {
@@ -1108,7 +1120,7 @@ export default function Page() {
             }
             setView(8);
           }} onConfigure={openSearchForm}/></div>}
-          {view===8&&assessmentAvailable&&<ResearchOverview key={displayedResult && missionKey(displayedResult.mission)} result={displayedResult} comparedAssessments={comparedAssessments} onSelectAssessment={assessment=>{
+          {view===8&&assessmentAvailable&&<ResearchOverview key={displayedResult && missionKey(displayedResult.mission)} result={displayedResult} searchLimitations={searchLimitations} comparedAssessments={comparedAssessments} onSelectAssessment={assessment=>{
             focusComparedSites.current = true;
             setResearchResult(assessment);
           }} onNewSearch={startNewAssessmentSearch} comparisonOrigin={comparisonOrigin} assessedAreaCentre={assessedAreaCentre} locationReference={reopenedMission ? undefined : comparisonOrigin} comparisonRadiusKm={comparisonRadius} onNavigate={setView} onRunAgain={reopenedMission ? async () => {
