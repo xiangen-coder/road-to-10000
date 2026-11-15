@@ -5,18 +5,13 @@ import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContai
 import { downloadReport } from "../lib/download-report";
 import { formatCoordinates } from "../lib/format-coordinates";
 import { optionalLimits, powerFields, simulatePower, smallLander, type Activity, type LabSource, type PowerInputs, type PowerKey, type PowerRun } from "../lib/mission-power";
+import MissionPlannerPrintReport, { type PlannerDraft as Draft } from "./mission-lab/MissionPlannerPrintReport";
 
 const fields = Object.keys(powerFields) as PowerKey[];
 const utc = (time: string) => new Date(time).toISOString().slice(0, 19).replace("T", " ") + " UTC";
 const shortTime = (time: string) => new Intl.DateTimeFormat("en-GB", {
   month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
 }).format(new Date(time));
-type Draft = {
-  brief: { name: string; objective: string; payload: string; notes: string };
-  power: PowerInputs;
-  activities: Activity[];
-  reportNotes: string;
-};
 const initialDraft: Draft = { brief: { name: "", objective: "", payload: "", notes: "" }, power: smallLander, activities: [], reportNotes: "" };
 const briefLabels = { name: "Mission name", objective: "Mission objective", payload: "Payload & equipment", notes: "Mission notes" } as const;
 const durationMs = 3600000;
@@ -264,16 +259,15 @@ export default function PowerMissionLab({ onAiContextChange, source, onResult, o
         <label>Report notes<textarea value={draft.reportNotes} onChange={(e) => { setDraft({ ...draft, reportNotes: e.target.value }); setNotice(""); }} /></label>
         <div className="account-actions">
           <button className="button primary" disabled={!run} onClick={() => save(true)}>Save mission report</button>
-          <button className="button subtle" disabled={!run} onClick={(event) => {
-            const disclosures = Array.from(event.currentTarget.closest(".power-lab")?.querySelectorAll<HTMLDetailsElement>("details:not([open])") ?? []);
-            disclosures.forEach((item) => { item.open = true; });
-            try { window.print(); }
-            finally { disclosures.forEach((item) => { item.open = false; }); }
+          <button className="button subtle" disabled={!run} onClick={async () => {
+            await document.fonts.ready;
+            window.print();
           }}>Export PDF</button>
           <button className="button subtle" disabled={!run} onClick={() => downloadReport(JSON.stringify(exportPayload(), null, 2), "json", "lunar-power-report")}>Export data</button>
         </div>
         {notice && <p role="status">{notice}</p>}
       </section>
+      <MissionPlannerPrintReport source={source} draft={draft} run={run} variant={variant} />
     </> : !currentResult && <article className="power-lab-panel"><h2>Open a site assessment</h2><p>Open Mission Planner from a completed Assessment to use its site and mission timeline.</p><button className="button primary" onClick={onConfigure}>Configure a search</button></article>}
   </section>;
 }

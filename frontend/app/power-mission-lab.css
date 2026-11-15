@@ -42,16 +42,117 @@
   .power-lab-columns { grid-template-columns: minmax(0,1fr); }
   .power-lab-source dl { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
-@media print {
-  body:has(div:not([hidden]) > .power-lab) .lunar-app > :not(.main-shell),
-  body:has(div:not([hidden]) > .power-lab) main > :not(:has(> .power-lab)), body:has(div:not([hidden]) > .power-lab) .footer,
-  .power-lab button { display: none !important; }
-  .power-lab { display: block; print-color-adjust: exact; }
-  .power-lab-panel { margin-block: 8px; }
-  .power-lab-columns { display: block; }
-  .power-lab-chart { break-inside: avoid; }
-}
+.planner-print-report { display: none; }
 
 @media print {
-  body:has(.power-lab:not([hidden] *)) .lunar-app main > div:has(> .power-lab):not([hidden]) { display: block !important; }
+  @page mission-planning-report { size: A4 portrait; margin: 14mm; }
+
+  body:has(.planner-print-report:not([hidden] *)) .lunar-app > :not(.main-shell),
+  body:has(.planner-print-report:not([hidden] *)) .lunar-app main > :not(:has(> .power-lab)),
+  body:has(.planner-print-report:not([hidden] *)) .lunar-app :is(.footer, .news-sidebar, .power-lab > :not(.planner-print-report)) {
+    display: none !important;
+  }
+  body:has(.planner-print-report:not([hidden] *)) :is(.lunar-app, .main-shell, .workspace-with-news, #main-content, .power-lab) {
+    display: block !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    zoom: 1 !important;
+  }
+  .power-lab .planner-print-report {
+    display: block;
+    page: mission-planning-report;
+    background: #fff;
+    color: #172331;
+    font: 10pt/1.42 Arial, sans-serif;
+    overflow-wrap: anywhere;
+    print-color-adjust: exact;
+  }
+  .planner-print-report header {
+    border-bottom: 1pt solid #438982;
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
+    break-inside: avoid;
+  }
+  .power-lab .planner-print-report h1 { font: 700 26pt/1.15 Georgia, serif; margin: 2mm 0; }
+  .power-lab .planner-print-report h2 { font: 700 16pt/1.2 Georgia, serif; margin: 0 0 2mm; }
+  .planner-print-report h3 { font: 700 10.5pt/1.3 Arial, sans-serif; margin: 3mm 0 1mm; }
+  .planner-print-report :is(h1, h2, h3) { color: #172331; break-after: avoid; }
+  .power-lab .planner-print-report p { color: inherit; margin: 1mm 0; widows: 3; orphans: 3; }
+  .power-lab .planner-print-report .planner-print-brand { color: #26655f; font-size: 9pt; font-weight: 700; letter-spacing: .07em; }
+  .planner-print-name { font-size: 13pt; font-weight: 700; }
+  .planner-print-report section {
+    border: .65pt solid #d2dbe4;
+    border-radius: 3mm;
+    margin: 0 0 3mm;
+    padding: 3.5mm;
+    box-decoration-break: clone;
+  }
+  .planner-print-report section:last-child { margin-bottom: 0; }
+  .planner-print-values { margin: 0; }
+  .planner-print-values > div {
+    padding: .75mm 0;
+    border-bottom: .5pt solid #e0e6ed;
+    break-inside: avoid;
+  }
+  .planner-print-values > div:last-child { border-bottom: 0; }
+  .power-lab .planner-print-values dt {
+    display: inline-block;
+    vertical-align: top;
+    width: 36%;
+    color: #43546a;
+    font: 700 9pt/1.42 Arial, sans-serif;
+    padding-right: 3mm;
+  }
+  .power-lab .planner-print-values dd { display: inline-block; width: 64%; margin: 0; font-weight: 400; }
+  .planner-print-metrics {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.5mm;
+    margin: 0 0 2mm;
+    break-inside: avoid;
+  }
+  .planner-print-metrics > div { border: .5pt solid #dce4ec; border-radius: 2mm; padding: 1.4mm 2mm; }
+  .power-lab .planner-print-metrics dt { color: #43546a; font-size: 9pt; }
+  .power-lab .planner-print-metrics dd { margin: 0; font-weight: 700; }
+  .planner-print-note { white-space: pre-wrap; }
+  .planner-print-table-intro { break-after: avoid; }
+  .planner-print-report table { width: 100%; border-collapse: collapse; font: inherit; color: inherit; }
+  .planner-print-report thead { display: table-header-group; }
+  .planner-print-report tr { break-inside: avoid; }
+  .planner-print-report :is(th, td) {
+    padding: .8mm 2mm;
+    border-bottom: .5pt solid #dce4ec;
+    text-align: left;
+    vertical-align: top;
+    background: #fff;
+    color: #172331;
+    font-size: 9.5pt;
+  }
+  .planner-print-report thead th { background: #edf2f6; }
+  .planner-print-report tbody th { font-weight: 400; }
+  .power-lab .planner-print-outcome {
+    border: .65pt solid #8caea9;
+    border-radius: 2mm;
+    padding: 2mm;
+    color: #225a51;
+    break-inside: avoid;
+  }
+  .power-lab .planner-print-outcome[data-warning="true"] { border-color: #bb8957; color: #75400d; }
+  .planner-print-figure { margin: 3mm 0 0; break-inside: avoid; }
+  .planner-print-figure figcaption { font-weight: 700; margin-bottom: 1mm; }
+  .planner-print-figure svg { display: block; width: 100%; height: auto; }
+  .planner-print-figure svg text { fill: #22354b; font: 12px Arial, sans-serif; }
+  .planner-print-report ul { padding-left: 5mm; margin: 1mm 0; list-style: disc; }
+  .planner-print-report li { margin: 0 0 1mm; }
+  .planner-print-report a { color: #225c77; text-decoration: underline; }
+  .planner-print-report .planner-print-legend { display: flex; flex-wrap: wrap; gap: 1mm 4mm; padding: 0; list-style: none; font-size: 9pt; }
+  .planner-print-legend li::before { display: inline-block; content: ""; width: 4mm; margin-right: 1.4mm; border-top: 1.5pt solid #08786e; vertical-align: middle; }
+  .planner-print-legend .demand::before { border-top-color: #26384c; border-top-style: dashed; }
+  .planner-print-legend .charge::before { border-top-color: #6842a3; }
+  .planner-print-legend .reserve::before { border-top-color: #965414; border-top-style: dotted; }
 }
