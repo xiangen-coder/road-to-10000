@@ -250,12 +250,28 @@ test("header account dropdown supports saved searches and logout on desktop and 
       signedIn = false;
       return route.fulfill({ json: { ok: true } });
     }
-    return route.fulfill({ json: { configured: true, user: signedIn ? { username: "Xiang En", email: "test@example.com" } : null } });
+    return route.fulfill({ json: { configured: true, user: signedIn ? { username: "Xiang En Lunar Navigator", email: "test@example.com" } : null } });
   });
   await page.route("**/api/account/history", (route) => route.fulfill({ json: { records: [] } }));
   await page.goto("/#search");
   const header = page.getByRole("banner");
-  const account = header.getByRole("button", { name: "Hi, Xiang En" });
+  const account = header.getByRole("button", { name: "Hi, Xiang En Lunar Navigator" });
+  const settings = header.getByRole("button", { name: "Open settings" });
+  async function expectAccountAndSettingsGap() {
+    const accountBounds = await account.boundingBox();
+    const settingsBounds = await settings.boundingBox();
+    expect(settingsBounds!.x - (accountBounds!.x + accountBounds!.width), `Account and Settings gap at ${page.viewportSize()?.width}px`)
+      .toBeGreaterThanOrEqual(6);
+    expect(settingsBounds!.x + settingsBounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  }
+  for (const width of [1900, 1440, 1101]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(account).toBeVisible();
+    await expectAccountAndSettingsGap();
+  }
+  await settings.click();
+  await expect(page.getByRole("dialog", { name: "Make it your own." })).toBeVisible();
+  await page.getByRole("button", { name: "Close settings" }).click();
   const saved = header.getByRole("button", { name: "Account & saved missions" });
   await account.click();
   await expect(account).toHaveAttribute("aria-expanded", "true");
@@ -279,6 +295,7 @@ test("header account dropdown supports saved searches and logout on desktop and 
   expect(await page.evaluate(() => Object.keys(localStorage).some((key) => key.endsWith(":report")))).toBe(false);
   await page.setViewportSize({ width: 320, height: 780 });
   await header.getByRole("button", { name: "Education", exact: true }).click();
+  await expectAccountAndSettingsGap();
   await account.click();
   const logout = header.getByRole("button", { name: "Log out" });
   const bounds = await logout.boundingBox();

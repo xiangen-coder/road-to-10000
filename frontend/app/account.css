@@ -1,14 +1,20 @@
 .lunar-topbar .header-login {
   min-width: 0;
+  max-width: 100%;
   min-height: 42px;
   padding-inline: 16px;
   white-space: nowrap;
 }
 
 .header-login span {
+  min-width: 0;
   max-width: 10rem;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.lunar-topbar .settings-trigger {
+  flex: none;
 }
 
 .lunar-auth {
