@@ -1,0 +1,86 @@
+/* Original concept scene inspired by the cinematic treatment in the supplied reference. */
+.lunar-hero.cinematic-hero { margin-inline:calc(-1 * clamp(24px,4.5vw,76px)); min-height:clamp(610px,calc(100svh - 100px),860px); padding:70px clamp(24px,4.5vw,76px) 110px; align-items:center; background:#030a19; }
+.cinematic-hero .hero-copy { width:68%; padding:0; }
+.cinematic-hero .hero-copy h1 { font-size:clamp(55px,6.2vw,94px); line-height:1.1; text-shadow:0 4px 32px #03091680; }
+.cinematic-hero .hero-copy .eyebrow { margin-bottom:30px; font-size:12px; letter-spacing:3px; }
+.cinematic-hero .hero-copy p { max-width:440px; color:#e0e7f2; margin-top:25px; text-shadow:0 2px 16px #030a19; }
+.cinematic-hero .hero-copy .hero-mantra { margin-top:25px; }
+.cinematic-cta { pointer-events:auto; margin-top:27px; border-radius:36px; display:inline-flex; align-items:center; gap:14px; padding:13px 24px; min-height:48px; font-size:15px; background:#edf3fa; color:#0a172e; border:1px solid #bed8ff; box-shadow:0 5px 34px #adcaff2b; }
+.cinematic-cta:hover { background:white; box-shadow:0 5px 40px #adcaff50; }
+.cinematic-hero + .search-console { margin-top:26px; }
+@media(max-width:850px) {
+ .lunar-hero.cinematic-hero { min-height:690px; padding-top:58px; padding-bottom:150px; }
+ .cinematic-hero .hero-copy { width:90%; }
+ .cinematic-hero .hero-copy h1 { font-size:clamp(54px,8vw,72px); }
+}
+@media(max-width:500px) {
+ .lunar-hero.cinematic-hero { margin-inline:-20px; min-height:680px; padding:42px 20px 128px; align-items:flex-start; }
+ .cinematic-hero .hero-copy { width:100%; }
+ .cinematic-hero .hero-copy h1 { font-size:53px; line-height:1.1; }
+ .cinematic-hero .hero-copy .eyebrow { font-size:10px; letter-spacing:2px; margin-bottom:25px; }
+ .cinematic-hero .hero-copy p { font-size:14px; max-width:315px; width:92%; }
+ .cinematic-hero .hero-copy .hero-mantra { font-size:10px; margin-top:22px; }
+ .cinematic-cta { font-size:14px; padding:12px 20px; }
+}
+@media print { .cinematic-visual { display:none; } }
+
+.lunar-app:has(.revised-search) {
+  container-type: inline-size;
+}
+
+.revised-search > .lunar-hero.cinematic-hero {
+  width: 100cqw;
+  max-width: none;
+  margin-inline: calc((100% - 100cqw) / 2);
+  min-height: max(500px, calc(100svh - 104px));
+  padding-inline: clamp(22px, 7vw, 140px);
+  display: flex;
+  align-items: center;
+  background: #030a19;
+}
+
+.revised-search .lunar-hero.cinematic-hero .hero-copy {
+  width: min(100%, 760px);
+  align-self: auto;
+}
+
+.cinematic-visual {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  mask-image: none;
+  background: #030a19;
+}
+
+.cinematic-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #030a19e6 0%, #030a19a8 30%, #030a1900 74%);
+  pointer-events: none;
+}
+
+.cinematic-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 60% 60%;
+  pointer-events: none;
+}
+
+@media (max-width: 850px) {
+  .revised-search > .lunar-hero.cinematic-hero {
+    align-items: flex-end;
+    padding-block: 42px 48px;
+  }
+
+  .cinematic-video {
+    object-position: 68% center;
+  }
+
+  .cinematic-visual::after {
+    background: linear-gradient(0deg, #030a19f5 0%, #030a19b8 39%, #030a1900 78%);
+  }
+}

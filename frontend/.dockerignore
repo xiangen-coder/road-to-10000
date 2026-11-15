@@ -1,0 +1,11 @@
+node_modules
+.next
+test-results
+playwright-report
+.env*
+*.tsbuildinfo
+work
+.next-preview
+.next-ux
+.next-research
+.next-reliability

@@ -1,0 +1,60 @@
+/* Shared Lunar Navigator workspace palette for the embedded archive. */
+:root {
+  color-scheme: dark;
+  --bg: #071225;
+  --panel: #15233b;
+  --line: #b4c5e52d;
+  --muted: #bac3d4;
+  --text: #f2f3f7;
+  --lime: #e7edf8;
+  --blue: #a8c9ee;
+}
+body { font-family: Arial, Helvetica, sans-serif; }
+main { padding: 20px; max-width: none; }
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif !important; }
+.trajectory-section { margin-top: 0; padding-top: 0; scroll-margin-top: 15px; }
+.trajectory-layout { gap: 0; background: var(--bg); }
+.trajectory-main { background: var(--bg); }
+.trajectory-details, .trajectory-select, .filters, dialog, .facts > div {
+  background: var(--panel);
+  border-color: var(--line);
+}
+.trajectory-select { border-radius: 16px 16px 0 0; }
+.trajectory-context { border-radius: 0 0 16px 16px; }
+.filters, dialog { border-radius: 16px; }
+.trajectory-camera button, .trajectory-select select, .playback select, .filters option {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--line);
+}
+.trajectory-camera button[aria-pressed=true],
+.playback button, .view-path, .eras button.active, .cta {
+  background: var(--lime);
+  color: var(--bg);
+}
+#trajectory-stages button[aria-pressed=true] {
+  background: #a8c9ee26;
+  border-color: var(--blue);
+}
+.trajectory-select > span, .trajectory-hud b, .results-top button { color: var(--blue); }
+.phase-readout p, .phase-readout small, .mission-type, .section-top,
+#trajectory-stages button, #trajectory-stages span { color: var(--muted); }
+.trajectory-details dd { color: var(--text); }
+#trajectory-error, .path-unavailable { background: var(--panel); color: var(--text) !important; }
+.mission, .mission small .path-badge { border-color: var(--line); }
+.mission:hover { background: #c9dcff12; }
+dialog::backdrop { background: #071225cb; }
+button, input, select { border-radius: 10px; min-height: 40px; }
+.archive-heading h2 { font-size: 28px; letter-spacing: -.5px; }
+.trajectory-intro, #about p { font-size: 14px; }
+.filters > label { font-size: 10px; }
+.filters input, .filters select { font-size: 14px; }
+#archive { padding-top: 35px; }
+a { color: var(--lime); }
+
+@media (max-width: 600px) {
+  main { padding: 12px; }
+  .trajectory-details { border-top: 1px solid var(--line); }
+  .playback { flex-wrap: wrap; }
+  .archive-heading h2 { font-size: 24px; }
+}

@@ -1,0 +1,728 @@
+"use client";
+import { formatCoordinates } from "../lib/format-coordinates";
+import { ChevronRight, ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { Mission, Site } from "../app/types";
+import type { Research, ResearchComparison } from "./LandingResearch";
+import type { ResearchPriority } from "./SearchConsole";
+import type { SolarSettings } from "./mission-lab/scenario-science";
+import { comparisonDistanceKm, comparisonRadiusKm } from "./ComparisonPicker";
+import {
+  comparableScores,
+  comparableTerrain,
+  comparableVisibility,
+  horizonLabel,
+  sameMission,
+  type PlanBForecast,
+} from "../lib/plan-b";
+import PlanBComparison from "./PlanBComparison";
+import type { ResearchArea, ResearchAreaResult } from "../lib/research-area";
+const criteria = [
+  ["S", "Sunlight"],
+  ["C", "Earth-centre visibility"],
+  ["T", "Terrain"],
+  ["H", "Temperature"],
+] as const;
+const key = (s: Site) => `${s.latitude},${s.longitude}`;
+const utc = (time: string) =>
+  Number.isFinite(Date.parse(time))
+    ? new Date(time).toISOString().slice(0, 19).replace("T", " ") + " UTC"
+    : "Unspecified";
+const score = (r: Research | undefined, k: string) =>
+  !r
+    ? "—"
+    : r.factors[k]?.score == null
+      ? "Unavailable"
+      : `${r.factors[k].score!.toFixed(1)}${k === "S" || k === "C" ? "%" : " / 100"}`;
+export default function PreliminaryComparison({
+  mission,
+  area,
+  areaResult,
+  radiusKm = comparisonRadiusKm,
+  state,
+  alternatives,
+  scenarios,
+  onScenariosChange,
+  onRemoveSite,
+  priority,
+  equipment,
+  notice,
+  alternativePicker,
+  onEvaluate,
+  onInspect,
+  onSearch,
+  onCancel,
+}: {
+  mission: Mission;
+  area?: ResearchArea;
+  areaResult?: ResearchAreaResult;
+  radiusKm?: number;
+  state: ResearchComparison | null;
+  alternatives: Site[];
+  scenarios: PlanBForecast[];
+  onScenariosChange: (scenarios: PlanBForecast[]) => void;
+  onRemoveSite: (site: Site) => void;
+  priority: ResearchPriority;
+  equipment: SolarSettings;
+  notice: string;
+  alternativePicker: ReactNode;
+  onEvaluate: () => void;
+  onInspect: (r: Research) => void;
+  onSearch: () => void;
+  onCancel: () => void;
+}) {
+  const [comparing, setComparing] = useState(false);
+  const [differencesOnly, setDifferencesOnly] = useState(false);
+  const workspace = useRef<HTMLDivElement>(null);
+  const focusWorkspace = useRef(false);
+  useEffect(() => {
+    if (!focusWorkspace.current) return;
+    focusWorkspace.current = false;
+    workspace.current?.focus({ preventScroll: true });
+    workspace.current?.scrollIntoView({ block: "start" });
+  }, [comparing]);
+  function openWorkspace(compare: boolean) {
+    focusWorkspace.current = true;
+    setComparing(compare);
+  }
+  const planned = [
+    mission,
+    ...alternatives.map((site) => ({ ...mission, ...site })),
+  ];
+  const isCompared = (option: PlanBForecast) =>
+    planned.some((site) => sameMission(site, option.result.mission)) ||
+    scenarios.some((scenario) =>
+      sameMission(scenario.result.mission, option.result.mission),
+    );
+  const cards = [
+    ...planned.map((site) => ({ site, scenario: undefined })),
+    ...scenarios
+      .filter(
+        (scenario) =>
+          !planned.some((site) => sameMission(site, scenario.result.mission)),
+      )
+      .map((scenario) => ({ site: scenario.result.mission, scenario })),
+  ];
+  const selected = state?.results.find((r) => sameMission(r.mission, mission));
+  const hasResults = !area || !!areaResult?.results.length;
+  const searchingArea = !!area && !areaResult && !!state?.busy;
+  const hasRecommendation = hasResults && areaResult?.recommended !== false;
+  const assessments = cards.map(
+    ({ site, scenario }) =>
+      scenario?.result ??
+      state?.results.find((value) => sameMission(value.mission, site)),
+  );
+  function comparableFactor(candidate: Research, factor: string) {
+    if (!selected) return false;
+    if (factor === "S" || factor === "C")
+      return comparableVisibility(selected, candidate);
+    if (factor === "T") return comparableTerrain(selected, candidate);
+    const originalFactor = selected.factors[factor];
+    const candidateFactor = candidate.factors[factor];
+    return (
+      originalFactor &&
+      candidateFactor &&
+      originalFactor.quality === candidateFactor.quality &&
+      originalFactor.source?.resolution_m ===
+        candidateFactor.source?.resolution_m
+    );
+  }
+  const shownCriteria =
+    comparing && differencesOnly && cards.length > 1
+      ? criteria.filter(([factor]) => {
+          const baseline = selected?.factors[factor]?.score;
+          return (
+            baseline == null ||
+            !assessments
+              .slice(1)
+              .every(
+                (candidate) =>
+                  candidate &&
+                  comparableFactor(candidate, factor) &&
+                  candidate.factors[factor]?.score?.toFixed(1) ===
+                    baseline.toFixed(1),
+              )
+          );
+        })
+      : criteria;
+  const hasUnfinished = planned.some(
+    (site) =>
+      !state?.results.some((result) =>
+        sameMission(result.mission, { ...mission, ...site }),
+      ),
+  );
+  function renderCard(
+    { site, scenario }: (typeof cards)[number],
+    index: number,
+  ) {
+    const result = assessments[index];
+    const failure = scenario ? undefined : state?.failures[key(site)];
+    const isSelected = index === 0;
+    const title = isSelected
+      ? area && hasResults
+        ? hasRecommendation ? (priority === "overall" ? "Highest-scoring point evaluated" : "Highest-ranked point evaluated") : "Point for inspection"
+        : "Original scenario"
+      : `Alternative ${index}`;
+    const comparable = selected && result && comparableScores(selected, result);
+    const delta =
+      comparable && result?.score != null && selected?.score != null
+        ? result.score - selected.score
+        : null;
+    const status = result
+      ? result.provisional
+        ? "Provisional"
+        : "Research assessment"
+      : failure
+        ? "Assessment unavailable"
+        : state?.busy
+          ? "Awaiting assessment"
+          : "Not assessed yet";
+    const limits = result?.limits;
+    const terrain = result?.terrain;
+    const checkedTerrain = terrain?.available && !terrain.regional_only ? terrain : undefined;
+    const checks = [
+      ["Maximum slope", checkedTerrain?.slope_max_deg, limits?.max_slope_deg],
+      ["Roughness", checkedTerrain?.roughness_m, limits?.max_roughness_m],
+      ["Relief", checkedTerrain?.relief_m, limits?.max_relief_m],
+      ["Mapped hazard fraction", result?.hazards?.available ? result.hazards.value : undefined, limits?.max_hazard_fraction],
+    ] as const;
+    const temperature = result?.temperature;
+    const observer = result?.observer_height;
+    const issues = [
+      ...new Set([
+        ...(failure ? [failure] : []),
+        ...(scenario?.reasons ?? []),
+        ...(result?.constraints_failed ?? []),
+        ...(result?.warnings ?? []),
+      ]),
+    ];
+
+    return (
+      <article
+        key={JSON.stringify([
+          site.latitude,
+          site.longitude,
+          Date.parse(site.start),
+          Date.parse(site.end),
+          site.interval_minutes,
+          site.clearance_deg,
+        ])}
+        className="pre-result-card glass"
+        aria-label={`${title}: ${site.name}`}
+      >
+        <header className="pre-result-heading">
+          <h2>{title}</h2>
+          {area && isSelected && areaResult && <p>
+            {areaResult.counts.evaluated} of {areaResult.sampled} points evaluated · {areaResult.counts.limits} exceeded configured limits.
+            {hasRecommendation && areaResult.counts.limits > 0 && " This point leads among those with no measured limit failures."}
+            {!hasRecommendation && hasResults && " No evaluated point qualified for recommendation."}
+          </p>}
+          {searchingArea ? (
+            <p role="status"><span className="pre-result-spinner" aria-hidden="true" />Searching the research area…</p>
+          ) : <p>{area && "Assessed point · "}{site.name}</p>}
+          {area && !searchingArea && <p>
+            {formatCoordinates(site.latitude, site.longitude)} · {comparisonDistanceKm(area.centre, site).toFixed(2)} km from {area.centre.name}
+            {" "}({formatCoordinates(area.centre.latitude, area.centre.longitude)})
+          </p>}
+          {comparing && (
+            <dl className="what-if-card-window">
+              <div>
+                <dt>Touchdown</dt>
+                <dd>{utc(site.start)}</dd>
+              </div>
+              <div>
+                <dt>Mission end</dt>
+                <dd>{utc(site.end)}</dd>
+              </div>
+              <div>
+                <dt>Distance</dt>
+                <dd>
+                  {area ? `${comparisonDistanceKm(area.centre, site).toFixed(2)} km from research centre` : isSelected
+                    ? "Original site"
+                    : `${comparisonDistanceKm(mission, site).toFixed(2)} km from original`}
+                </dd>
+              </div>
+            </dl>
+          )}
+          {scenario && (
+            <span className="eyebrow">
+              {scenario.reasons.length
+                ? "WHAT IF FORECAST"
+                : "WHAT IF SCENARIO"}
+            </span>
+          )}
+        </header>
+        <div className="pre-score">
+          <div>
+            <strong>
+              {result?.score == null ? "—" : result.score.toFixed(1)}
+            </strong>
+            {!searchingArea && <span> / 100</span>}
+            <p>Overall research score</p>
+          </div>
+          <span
+            className={`pre-score-status${result?.provisional ? " provisional" : ""}`}
+          >
+            {status}
+          </span>
+        </div>
+        {result && <div className="pre-comparison-note">
+          <p>{result.constraints_failed.length ? "Ineligible for recommendation · configured limits exceeded." : "No configured limits exceeded in the available measurements."}</p>
+          <ul>{checks.map(([label, value, limit]) => <li key={label}>
+            {label} · {value == null || limit == null ? "Unknown" : value > limit ? "Failed" : "Passed"}
+          </li>)}</ul>
+          <p>{horizonLabel(result)} · {site.interval_minutes} min sampling · {site.clearance_deg}° Earth clearance</p>
+          {!isSelected && selected && !comparableVisibility(selected, result) &&
+            <p>Visibility methods or inputs differ. Sunlight, Earth-centre visibility, and energy differences are unavailable.</p>}
+        </div>}
+        <section className="pre-criteria" aria-label="Criteria at a glance">
+          <h3>Criteria at a glance</h3>
+          <dl>
+            {shownCriteria.map(([factor, label]) => {
+              const reading = result?.factors[factor]?.score;
+              const baseline = selected?.factors[factor]?.score;
+              const change =
+                comparing &&
+                !isSelected &&
+                reading != null &&
+                baseline != null &&
+                result &&
+                comparableFactor(result, factor)
+                  ? Number((reading - baseline).toFixed(1))
+                  : null;
+              return (
+                <div key={factor}>
+                  <dt>{label}</dt>
+                  <dd>
+                    {searchingArea ? "—" : factor === "T" && terrain?.regional_only
+                      ? terrain.regional_score != null
+                        ? `${terrain.regional_score.toFixed(1)} / 100 · Regional slope score (${terrain.resolution_m?.toFixed(0)} m pixels, ${terrain.radius_m} m radius)`
+                        : `Regional · ${terrain.slope_p95_deg?.toFixed(1)}° slope (p95)`
+                      : score(result, factor)}
+                    {change != null && (
+                      <small>
+                        {" "}
+                        ·{" "}
+                        {change === 0
+                          ? "Unchanged"
+                          : `${change > 0 ? "+" : "−"}${Math.abs(change).toFixed(1)}${factor === "S" || factor === "C" ? " pp" : ""}`}
+                      </small>
+                    )}
+                  </dd>
+                  {reading != null && (
+                    <meter
+                      min={0}
+                      max={100}
+                      value={reading}
+                      aria-label={label}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </dl>
+          {shownCriteria.length === 0 && (
+            <p>All displayed criteria match the original.</p>
+          )}
+          <p>
+            Percentages show availability. Values out of 100 are factor scores.
+          </p>
+        </section>
+        <details className="pre-extra pre-environment">
+          <summary>Environment &amp; limits</summary>
+          <dl>
+            <div>
+              <dt>Mission window</dt>
+              <dd hidden={searchingArea}>
+                {Math.abs(site.latitude).toFixed(4)}°{" "}
+                {site.latitude < 0 ? "S" : "N"},{" "}
+                {Math.abs(site.longitude).toFixed(4)}°{" "}
+                {site.longitude < 0 ? "W" : "E"}
+              </dd>
+              <dd>Touchdown {searchingArea ? "—" : utc(site.start)}</dd>
+              <dd>Mission end {searchingArea ? "—" : utc(site.end)}</dd>
+            </div>
+            {result && (
+              <div>
+                <dt>Scoring evidence</dt>
+                <dd>
+                  {result.provisional
+                    ? "Provisional · incomplete evidence"
+                    : status}
+                </dd>
+                <dd>
+                  {(result.available_weight * 100).toFixed(0)}% nominal evidence
+                  · Missing: {result.missing.join(", ") || "none"}
+                </dd>
+              </div>
+            )}
+            {scenario && (
+              <div>
+                <dt>Sunlight and Earth-centre visibility</dt>
+                {result?.geometry.sunlight_hours != null && (
+                  <dd>
+                    {result.geometry.sunlight_hours.toFixed(1)} h of sunlight
+                  </dd>
+                )}
+                {scenario.energy != null && (
+                  <dd>
+                    {scenario.energy.toFixed(2)} kWh estimated solar energy
+                  </dd>
+                )}
+                {result?.geometry.metrics?.longest_blackout_hours != null && (
+                  <dd>
+                    {result.geometry.metrics.longest_blackout_hours.toFixed(1)}{" "}
+                    h longest Earth-centre visibility gap
+                  </dd>
+                )}
+              </div>
+            )}
+            {result && (
+              <>
+                <div>
+                  <dt>Terrain evidence</dt>
+                  {terrain?.slope_p95_deg != null && (
+                    <dd>{terrain.slope_p95_deg.toFixed(1)}° p95 slope</dd>
+                  )}
+                  {terrain?.coverage_type === "regional" && (
+                    <dd>{terrain.resolution_m?.toFixed(0)} m regional screening</dd>
+                  )}
+                  {observer?.available &&
+                    observer.coverage_type === "global" &&
+                    observer.value != null && (
+                      <dd>
+                        Approximate elevation:{" "}
+                        {observer.value.toLocaleString("en-GB")} m above the
+                        lunar reference sphere · NASA LOLA global map
+                      </dd>
+                    )}
+                  {terrain?.regional_score != null && terrain.slope_p95_deg != null &&
+                    limits?.max_slope_deg != null && terrain.slope_p95_deg > limits.max_slope_deg && (
+                      <dd>
+                        The regional 95th-percentile slope ({terrain.slope_p95_deg.toFixed(1)}°)
+                        exceeds the {limits.max_slope_deg}° scoring cutoff, so the regional score is 0 / 100.
+                      </dd>
+                    )}
+                  {terrain?.regional_only && (
+                    <dd>
+                      {terrain.source?.name} · {terrain.radius_m?.toFixed(0)} m sampling radius
+                      {terrain.roughness_m != null && ` · ${terrain.roughness_m.toFixed(1)} m roughness`}
+                      {terrain.relief_m != null && ` · ${terrain.relief_m.toFixed(1)} m relief`}
+                    </dd>
+                  )}
+                  {result.factors.T?.score == null && (
+                    <dd>
+                      {observer?.coverage_type === "global" && !terrain?.regional_only
+                        ? "Local slope, roughness and relief require finer elevation coverage."
+                        : result.factors.T?.explanation ||
+                          "Terrain evidence unavailable."}
+                    </dd>
+                  )}
+                  {result.factors.T?.score == null &&
+                    result.horizon.available && (
+                      <dd>
+                        The available terrain supports skyline estimates. Check
+                        the neighbourhood size and DEM resolution limit for
+                        slope scoring.
+                      </dd>
+                    )}
+                </div>
+                {temperature?.available && (
+                  <div>
+                    <dt>Temperature evidence</dt>
+                    <dd>
+                      Observed seasonal range{" "}
+                      {temperature.minimum_k?.toFixed(1)}–
+                      {temperature.maximum_k?.toFixed(1)} K
+                    </dd>
+                  </div>
+                )}
+              </>
+            )}
+            <div>
+              <dt>Landing checks</dt>
+              <dd>
+                {scenario?.reasons.length
+                  ? "Landing checks unresolved or exceeded."
+                  : failure
+                    ? "Assessment unavailable."
+                    : !result
+                      ? "Evaluate this site to check the mission limits."
+                      : result.constraints_failed.length
+                        ? "Configured limits exceeded."
+                        : "No limit failures in the available evidence."}
+              </dd>
+              {limits?.max_slope_deg != null && (
+                <dd>Maximum slope {limits.max_slope_deg}°</dd>
+              )}
+              {limits?.max_roughness_m != null && (
+                <dd>Maximum roughness {limits.max_roughness_m} m</dd>
+              )}
+              {limits?.max_relief_m != null && (
+                <dd>Maximum relief {limits.max_relief_m} m</dd>
+              )}
+            </div>
+          </dl>
+          {issues.length > 0 && (
+            <ul>
+              {issues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
+          )}
+        </details>
+        {!isSelected && result && selected && (
+          <p className="pre-comparison-note">
+            {result.constraints_failed.length
+              ? "Exceeds configured limits; not an eligible backup recommendation."
+              : !comparable
+                ? "Evidence coverage differs; scores cannot establish a better landing site."
+                : delta == null
+                  ? "Insufficient score data for comparison."
+                  : `${delta > 0 ? "+" : ""}${delta.toFixed(1)} research points versus your selection. This does not establish safety or diversion reachability.`}
+          </p>
+        )}
+        <div className="pre-result-detail-action">
+          <button
+            className="button primary"
+            disabled={!result}
+            onClick={() => result && onInspect(result)}
+          >
+            More details <ChevronRight size={16} aria-hidden="true" />
+          </button>
+          {result && (
+            <small>
+              Evidence, terrain measurements, temperature range &amp; warnings
+            </small>
+          )}
+          {result && <p>Landing safety requires verification.</p>}
+        </div>
+        <div className="pre-result-actions">
+          <button className="button subtle" onClick={onSearch}>
+            Back to Search
+          </button>
+          {!isSelected && (
+            <button
+              type="button"
+              className="button subtle"
+              disabled={!scenario && state?.busy}
+              onClick={() =>
+                scenario
+                  ? onScenariosChange(
+                      scenarios.filter((entry) => entry !== scenario),
+                    )
+                  : onRemoveSite(site)
+              }
+            >
+              Remove from Compare
+            </button>
+          )}
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <section
+      className="preliminary-comparison"
+      aria-label="Preliminary site comparison"
+      id="comparison-cards"
+      tabIndex={-1}
+    >
+      <div className="preliminary-intro">
+        <div>
+          <span className="eyebrow">PRELIMINARY ASSESSMENT</span>
+          <h1>Compare landing sites</h1>
+          <p>Compare up to 2 sites, or use What IF to test another location or touchdown.</p>
+        </div>
+        <div className="preliminary-controls">
+          {cards.length > 1 && (!!state?.results.length || scenarios.length > 0) && (
+            <a
+              className="button subtle"
+              href="#research-report"
+              onClick={(event) => {
+                event.preventDefault();
+                const report = document.getElementById("research-report");
+                report?.focus({ preventScroll: true });
+                report?.scrollIntoView({ block: "start" });
+              }}
+            >
+              Mission report and exports
+            </a>
+          )}
+          <button className="button subtle" onClick={onSearch}>
+            Back to Search
+          </button>
+          {hasUnfinished && !state?.busy && (!area || hasRecommendation || state?.error) && (
+            <button className="button primary" onClick={onEvaluate}>
+              {state?.error || Object.keys(state?.failures ?? {}).length
+                ? "Retry unfinished assessments"
+                : alternatives.length
+                  ? "Assess saved points"
+                  : "Evaluate selected site"}
+            </button>
+          )}
+          {state?.busy && (
+            <button className="button subtle" onClick={onCancel}>
+              Stop comparison
+            </button>
+          )}
+        </div>
+      </div>
+      <AssessmentSummary mission={area?.centre ?? mission} radiusKm={radiusKm} result={areaResult} />
+      {areaResult && !hasResults && <p className="info" role="status">
+        No qualifying landing point found in this research area.
+      </p>}
+      {state?.busy && (
+        <p role="status" className="info">
+          {state.progress || "Preparing the comparison…"}{" "}
+          Cards update as assessments finish.
+        </p>
+      )}
+      {state?.error && (
+        <p role="alert" className="error">
+          {state.error}
+        </p>
+      )}
+      {notice && (
+        <p className="info" role="status">
+          {notice}
+        </p>
+      )}
+      <div hidden={!hasResults && !searchingArea} className="what-if-workspace" ref={workspace} tabIndex={-1}>
+        {comparing ? (
+          <div className="what-if-compare-heading">
+            <div>
+              <button
+                className="button subtle"
+                onClick={() => openWorkspace(false)}
+              >
+                Back to options
+              </button>
+              <h2>Compare selected plans</h2>
+              <p>
+                Original plan and {cards.length - 1} alternatives · all times
+                UTC
+              </p>
+            </div>
+            <div className="account-actions">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={differencesOnly}
+                  onChange={(event) => setDifferencesOnly(event.target.checked)}
+                />{" "}
+                Show differences only
+              </label>
+              <button
+                className="button subtle"
+                onClick={() => openWorkspace(false)}
+              >
+                Add option
+              </button>
+            </div>
+          </div>
+        ) : (
+          cards.length > 1 && (
+            <button
+              className="button subtle what-if-compare-link"
+              onClick={() => openWorkspace(true)}
+            >
+              Compare added plans ({cards.length})
+            </button>
+          )
+        )}
+        <div
+          className={`pre-result-grid${comparing ? "" : " what-if-browsing"}`}
+          role="region"
+          aria-label="Comparison cards"
+          tabIndex={0}
+        >
+          {renderCard(cards[0], 0)}
+          {cards.slice(1).map((card, index) => renderCard(card, index + 1))}
+          <PlanBComparison
+            key={JSON.stringify([area?.centre ?? mission, priority, equipment])}
+            original={selected}
+            pendingMission={searchingArea ? mission : undefined}
+            area={area}
+            areaResult={areaResult}
+            priority={priority}
+            equipment={equipment}
+            alternativePicker={alternativePicker}
+            isCompared={isCompared}
+            hidden={comparing}
+            comparedCount={cards.length}
+            onCompare={(options) => {
+              onScenariosChange([
+                ...scenarios,
+                ...options.filter((option) => !isCompared(option)),
+              ]);
+              openWorkspace(true);
+            }}
+          />
+        </div>
+      </div>
+      {hasResults && (
+        <p className="preliminary-disclosure">
+          Provisional research scores. See More details for evidence and coverage.
+        </p>
+      )}
+    </section>
+  );
+}
+
+const missionDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric", month: "short", year: "numeric", timeZone: "UTC",
+});
+const missionTime = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "UTC",
+});
+const kilometres = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 });
+function AssessmentSummary({ mission, radiusKm, result }: {
+  mission: Mission;
+  radiusKm: number;
+  result?: ResearchAreaResult;
+}) {
+  const start = new Date(mission.start);
+  const end = new Date(mission.end);
+  const windowAvailable = Number.isFinite(+start) && Number.isFinite(+end);
+  const startTime = windowAvailable ? missionTime.format(start).replace(/:00$/, "") : "";
+  const endTime = windowAvailable ? missionTime.format(end).replace(/:00$/, "") : "";
+  const coordinatesAvailable = Number.isFinite(mission.latitude) && Number.isFinite(mission.longitude);
+  const radiusM = Math.round(radiusKm * 1000);
+  const outerRings = [radiusM / 3, radiusM * 2 / 3, radiusM];
+  const nearbyRings = [500, 1000, 2000].filter((distance) => distance < radiusM);
+  const radii = result?.sampling?.radii_m ?? [...new Set([...nearbyRings, ...outerRings])];
+  const perRing = result?.sampling?.points_per_ring ?? 8;
+
+  return (
+    <div className="compare-assessment">
+      <dl className="research-centre-summary glass">
+        <div><dt>Research area name</dt><dd>{mission.name?.trim() || "Custom location"}</dd></div>
+        <div><dt>Research area coordinates</dt><dd>{coordinatesAvailable
+          ? formatCoordinates(mission.latitude, mission.longitude) : "Unavailable"}</dd></div>
+        <div><dt>Search radius</dt><dd>{radiusKm} km</dd></div>
+        <div>
+          <dt>Mission window</dt>
+          <dd>{windowAvailable ? missionDate.formatRange(start, end) : "Unavailable"}</dd>
+          <dd className="compare-mission-meta">
+            {windowAvailable && `${startTime}${startTime === endTime ? "" : ` → ${endTime}`} UTC · `}
+            {mission.interval_minutes === 60 ? "Hourly samples" : `${mission.interval_minutes}-minute samples`}
+          </dd>
+        </div>
+      </dl>
+      {result && (
+        <div className="compare-assessment-disclosures">
+            <details className="glass" open>
+              <summary>How sites were sampled <ChevronDown size={16} aria-hidden="true" /></summary>
+              <ul>
+                <li>We sample the centre and {perRing} evenly spaced points per ring across {radii.length} rings.</li>
+                {nearbyRings.length > 0 && <li>Nearby rings at {nearbyRings.map((distance) => kilometres.format(distance / 1000)).join(", ")} km.</li>}
+                <li>Outer rings at ⅓, ⅔ and the full radius ({outerRings.map((distance) => kilometres.format(distance / 1000)).join(", ")} km).</li>
+              </ul>
+            </details>
+        </div>
+      )}
+    </div>
+  );
+}

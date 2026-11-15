@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lunar surface viewer</title>
+  <link rel="stylesheet" href="atlas.css">
+</head>
+<body>
+  <div class="projections" role="group" aria-label="Map projection">
+    <button id="globe" aria-pressed="true" disabled>3D globe</button>
+    <button id="flat" aria-pressed="false" disabled>2D map</button>
+    <button id="polar" aria-pressed="false" disabled>South Pole map</button>
+    <button id="south-pole" type="button" disabled>Find south pole</button>
+  </div>
+  <main class="viewport" aria-label="Interactive lunar surface">
+    <canvas id="surface" aria-hidden="true"></canvas>
+    <canvas id="overlay" tabindex="0" aria-label="Lunar surface. Click or tap a point to select it. Use arrow keys to pan, plus or minus to zoom, and Enter to select the center."></canvas>
+    <div class="intro">
+      <h1>Explore the lunar surface.</h1>
+      <p>Click or tap to select · Drag to explore</p>
+      <ul class="map-legend" aria-label="Map colours">
+        <li><span class="legend-landmark"></span>White · Craters and other landmarks</li>
+        <li><span class="legend-mare"></span>Blue · Lunar seas (maria)</li>
+        <li><span class="legend-mission"></span>Yellow · Mission sites and south pole</li>
+      </ul>
+    </div>
+    <div class="controls" role="group" aria-label="Camera controls">
+      <button id="closer" aria-label="Zoom in">+</button>
+      <button id="farther" aria-label="Zoom out">−</button>
+      <button id="reset" aria-label="Reset view">⌂</button>
+    </div>
+    <div id="feature" class="feature" hidden>
+      <button id="dismiss" aria-label="Dismiss feature">×</button>
+      <p id="feature-type"></p>
+      <h2 id="feature-name"></h2>
+      <p id="feature-info"></p>
+      <button id="select-pole" type="button" hidden>Use south pole</button>
+    </div>
+    <p id="notice" role="status"></p>
+    <footer>
+      <span id="landing-point" role="status"></span>
+      <span id="coords">Move over the surface for coordinates</span>
+      <span id="scale"></span>
+      <span><a href="https://trek.nasa.gov/moon/" target="_blank" rel="noreferrer">NASA Moon Trek / LROC</a> · <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noreferrer">Elevation</a> · <a href="https://planetarynames.wr.usgs.gov/GIS_Downloads" target="_blank" rel="noreferrer">IAU/USGS</a> · <a href="https://azmth.space/moon/data" target="_blank" rel="noreferrer">Landing data</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a>)</span>
+    </footer>
+  </main>
+  <script type="module" src="atlas.js"></script>
+</body>
+</html>

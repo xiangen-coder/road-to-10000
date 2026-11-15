@@ -1,0 +1,339 @@
+{
+  "version": 1,
+  "products": {
+    "lola": {
+      "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_surf.tif",
+      "name": "LOLA Site01 Connecting Ridge 5 m DEM",
+      "units": "m",
+      "frame": "MOON_ME_DE421",
+      "reference": "radius_minus_1737400m",
+      "observation_period": "See Barker et al. 2021 product documentation",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/78",
+      "quality": "Interpolated altimetry; approximately 90% of 5 m pixels interpolated. Not boulder-scale certification.",
+      "path": "lola.tif",
+      "sha256": "3bb4c33a1a1267dc4714e2c5e1a707d657a613e389f799daf120966c217c99d8",
+      "source_sha256": "3ba7b97cb00a2bcf21189c3aeb535f65afc21207154ab9f0d43c5bdc1f7e747e",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_surf.tif",
+      "resolution_m": 5.0,
+      "retrieved_at": "2026-11-05T07:43:28.424931+00:00",
+      "status": "processed",
+      "coverage_note": "Native-resolution subset for public demo; outside coverage is unavailable. Run prepare_lunar_research.py for full source products.",
+      "projected_bounds_m": [
+        -13000,
+        -14000,
+        -9000,
+        -10000
+      ]
+    },
+    "temperature_min": {
+      "url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_polar/additional_maps/polar_south_80_summer_min-float.tif",
+      "name": "Diviner south-pole summer minimum",
+      "units": "K",
+      "frame": "MOON_ME",
+      "observation_period": "2009-07-05 to 2019-02-17",
+      "documentation": "https://www.diviner.ucla.edu/data",
+      "quality": "Historical summer bolometric brightness-temperature composite; not a mission forecast.",
+      "path": "temperature_min_polar.tif",
+      "sha256": "f7f4b11d47722808661cd933c152e90a0cf578b00a1cd9a3a5b5a2117be19882",
+      "source_sha256": "793d4a83c111b8a603f7b726ce5f7efae02e21e19f2589595922b348286d7721",
+      "source_url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_polar/additional_maps/polar_south_80_summer_min-float.tif",
+      "resolution_m": 240.03595736281088,
+      "retrieved_at": "2026-11-05T07:43:30.907664+00:00",
+      "status": "processed",
+      "coverage_note": "Full native south polar product, nominally 80\u00b0S to the pole. Native gaps remain unavailable.",
+      "projected_bounds_m": [
+        -304005.54,
+        -304005.54,
+        304005.54,
+        304005.54
+      ]
+    },
+    "temperature_max": {
+      "url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_polar/additional_maps/polar_south_80_summer_max-float.tif",
+      "name": "Diviner south-pole summer maximum",
+      "units": "K",
+      "frame": "MOON_ME",
+      "observation_period": "2009-07-05 to 2019-02-17",
+      "documentation": "https://www.diviner.ucla.edu/data",
+      "quality": "Historical summer bolometric brightness-temperature composite; not a mission forecast.",
+      "path": "temperature_max_polar.tif",
+      "sha256": "af0d286a2d37a2aa0d4a3168875b62d6a1ba70b9cd4b2552d9e94930c2a48585",
+      "source_sha256": "ba4a1b6275402d6b0c1000ceb0208ad63d37665afaeb902ab6f108c67c0a0c67",
+      "source_url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_polar/additional_maps/polar_south_80_summer_max-float.tif",
+      "resolution_m": 240.03595736281088,
+      "retrieved_at": "2026-11-05T07:43:33.461820+00:00",
+      "status": "processed",
+      "coverage_note": "Full native south polar product, nominally 80\u00b0S to the pole. Native gaps remain unavailable.",
+      "projected_bounds_m": [
+        -304005.54,
+        -304005.54,
+        304005.54,
+        304005.54
+      ]
+    },
+    "height_uncertainty": {
+      "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_toterr.tif",
+      "name": "LOLA Site01 height uncertainty",
+      "units": "m RMS",
+      "frame": "MOON_ME_DE421",
+      "observation_period": "See Barker et al. 2021 product documentation",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/78",
+      "quality": "Published RMS uncertainty or native laser shot counts; no calibrated landing probability.",
+      "path": "height_uncertainty.tif",
+      "sha256": "d00cc8dc55dbab0d3fd77d039f605aef762528947d7e36420e97bd66cfd1e277",
+      "source_sha256": "cf2cf52f52d2aa51e60d058010d10b0ebfb1d3e920f5a2b9a46eb6c51054ab1c",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_toterr.tif",
+      "resolution_m": 5.0,
+      "retrieved_at": "2026-11-05T07:43:38.129872+00:00",
+      "status": "processed",
+      "coverage_note": "Native-resolution subset for public demo; outside coverage is unavailable. Run prepare_lunar_research.py for full source products.",
+      "projected_bounds_m": [
+        -13000,
+        -14000,
+        -9000,
+        -10000
+      ]
+    },
+    "slope_uncertainty": {
+      "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_slperr.tif",
+      "name": "LOLA Site01 slope uncertainty",
+      "units": "degree RMS",
+      "frame": "MOON_ME_DE421",
+      "observation_period": "See Barker et al. 2021 product documentation",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/78",
+      "quality": "Published RMS uncertainty or native laser shot counts; no calibrated landing probability.",
+      "path": "slope_uncertainty.tif",
+      "sha256": "e951278ce59dae4cba44b3c4215aca17451e5bdeac22b22ea38092d88ecf7686",
+      "source_sha256": "52bc3b239f61605e6bb98bab6d6b17acd22389c59e57336862157f2fbd643a33",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_slperr.tif",
+      "resolution_m": 5.0,
+      "retrieved_at": "2026-11-05T07:43:43.685254+00:00",
+      "status": "processed",
+      "coverage_note": "Native-resolution subset for public demo; outside coverage is unavailable. Run prepare_lunar_research.py for full source products.",
+      "projected_bounds_m": [
+        -13000,
+        -14000,
+        -9000,
+        -10000
+      ]
+    },
+    "sample_count": {
+      "url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_ldec.tif",
+      "name": "LOLA Site01 sample count",
+      "units": "count",
+      "frame": "MOON_ME_DE421",
+      "observation_period": "See Barker et al. 2021 product documentation",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/78",
+      "quality": "Published RMS uncertainty or native laser shot counts; no calibrated landing probability.",
+      "path": "sample_count.tif",
+      "sha256": "33d1ac6214f6b54a0fa041e7cdb11113af9fbc5435ceb044e91abb5b5c29bc53",
+      "source_sha256": "16d6ed21020ad48fa71d94e7437492acf5bf04118f52bcd292f57f22ead4cd23",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_5mpp/Site01/Site01_final_adj_5mpp_ldec.tif",
+      "resolution_m": 5.0,
+      "retrieved_at": "2026-11-05T07:43:46.997708+00:00",
+      "status": "processed",
+      "coverage_note": "Native-resolution subset for public demo; outside coverage is unavailable. Run prepare_lunar_research.py for full source products.",
+      "projected_bounds_m": [
+        -13000,
+        -14000,
+        -9000,
+        -10000
+      ]
+    },
+    "horizon_dem": {
+      "name": "NASA adjusted LOLA south-pole 20 m horizon DEM subset",
+      "path": "horizon_dem.tif",
+      "sha256": "8e6776fbb19ca01b9af9cb0d778a71f73698fc3d60d089dfbe14ff59a50775c9",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_20MPP_ADJ.TIF",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/90",
+      "units": "m",
+      "frame": "MOON_ME_DE421",
+      "reference": "radius_minus_1737400m",
+      "resolution_m": 20,
+      "projected_bounds_m": [
+        -70000.0,
+        -40000.0,
+        30000.0,
+        45000.0
+      ],
+      "quality": "Regional subset of adjusted LOLA COG. Native 20 m spacing; effective resolution varies. Finite horizon screening, not landing-footpad topography.",
+      "observation_period": "See NASA PGDA product 90 documentation; acquisition cutoff not inferred from retrieval date.",
+      "retrieved_at": "2026-11-05T09:49:16.105170+00:00",
+      "parts": [
+        {
+          "path": "horizon_dem.part00",
+          "sha256": "9013b9329f5e15003efe2d512d99d25f8ba4a36f7951b0ea87581221b6b5a1df"
+        },
+        {
+          "path": "horizon_dem.part01",
+          "sha256": "b24e3c082a1c8c63501cfc4c394651c74c4d34c73f67f491a2aa8948a8101ae8"
+        },
+        {
+          "path": "horizon_dem.part02",
+          "sha256": "9df8a36ff73bb97bf0296aff1987fa10ce81fd4cb2ed0d0000d415102fff6df8"
+        },
+        {
+          "path": "horizon_dem.part03",
+          "sha256": "fa1002a08047a0802c906eb36b7969f411b5201e19e63951b171a6c4a8abbefa"
+        },
+        {
+          "path": "horizon_dem.part04",
+          "sha256": "d64cc0fcb667bf6444f25a101402e4ac9070b57b23e11cad3fa7e475f195445a"
+        },
+        {
+          "path": "horizon_dem.part05",
+          "sha256": "fd0d85726d960f98da7657c74716dfa0dd74ed8e322c3dab336a1a16d5044de2"
+        },
+        {
+          "path": "horizon_dem.part06",
+          "sha256": "afa753f02ed0d0ef420a405bb14bbfff4b3aac98542f6c6bbe2a4123156dfe0e"
+        },
+        {
+          "path": "horizon_dem.part07",
+          "sha256": "a2c08448444f262c56ab4d2501fd52408e31524057277c100160035126154b47"
+        },
+        {
+          "path": "horizon_dem.part08",
+          "sha256": "99af1e10ce0faa1cd90f674e470c49d641df6b3e6fb58fa3ed34af7c8696df2b"
+        },
+        {
+          "path": "horizon_dem.part09",
+          "sha256": "4f3c605a0a08f2540e6e76cb86d4f3fe5162f79580ef15de5aa2e9851ade07cb"
+        },
+        {
+          "path": "horizon_dem.part10",
+          "sha256": "ef96e4855ebe64a7b25047686fb20e5d5b812670e5b8023e916e73cb7e9fe129"
+        },
+        {
+          "path": "horizon_dem.part11",
+          "sha256": "36bbc24ee1756e010a1de8ee3d791fa285586f395ef58e16d03766500bc9c62d"
+        },
+        {
+          "path": "horizon_dem.part12",
+          "sha256": "e83e97ef8e12197881a33a17e39552e4eb7f09b87d0a972480cd7df5e235bdd8"
+        },
+        {
+          "path": "horizon_dem.part13",
+          "sha256": "ee992dbb4bb94f307602424d5eaddd91666869034e4543c9fc280f98dba42e76"
+        },
+        {
+          "path": "horizon_dem.part14",
+          "sha256": "cf78cbb936062de216f26b4c27a7914bc7bcddb1b173e7dc86223baa96ab0dd3"
+        },
+        {
+          "path": "horizon_dem.part15",
+          "sha256": "4c645bbd55402801c954abf29fe872cdf0999c9404912bad4056fe2e04dbd675"
+        },
+        {
+          "path": "horizon_dem.part16",
+          "sha256": "551e341d9c9c9a1be9af4b75658f95b3f03eefbd865c3202e0e45d785a8cb39c"
+        },
+        {
+          "path": "horizon_dem.part17",
+          "sha256": "30bc0eacb870eaec594c554ca0477e429d8227d112d035b6e27fe99e7d5f0e8d"
+        },
+        {
+          "path": "horizon_dem.part18",
+          "sha256": "bf55045f4854fbe78bc24bcac9045b2f688b652c12d1e0869ed0925dc6623c82"
+        },
+        {
+          "path": "horizon_dem.part19",
+          "sha256": "ef7379e1c5806e1f9b5864917e540c04ddc48990bb56a150ec52f17700200e46"
+        },
+        {
+          "path": "horizon_dem.part20",
+          "sha256": "0454241e19c00bb4e394056efa5b4e037884414e856df680ee9804beceeb55cf"
+        },
+        {
+          "path": "horizon_dem.part21",
+          "sha256": "1a196789cda005dbfa5dd3975545bc8574556d8e229956b30eb2471f804c1a7c"
+        },
+        {
+          "path": "horizon_dem.part22",
+          "sha256": "e71b1bfadde447b2bef6bd9a438deae447902b2ef87a18a16af1bb6a25373d5a"
+        },
+        {
+          "path": "horizon_dem.part23",
+          "sha256": "7fe9bcd7a4e2d8be83204fd0513eb590243994b1ec882830943f86d3ee7231b9"
+        },
+        {
+          "path": "horizon_dem.part24",
+          "sha256": "a6188b0cd987834b4e1bb3e31e18df1553a6e2151fc0d220c26ce3c3e613607d"
+        }
+      ]
+    },
+    "global_dem": {
+      "name": "NASA LOLA global elevation (LDEM_16)",
+      "path": "Moon_LOLA_global_16ppd.tif",
+      "sha256": "88f42411677b119d33c42a15628ccd0c9a2148a9a2ad3c2075b5a891f27a4a88",
+      "source_url": "https://ode.rsl.wustl.edu/mercury/pagehelp/Content/Missions_Instruments/Lunar%20Reconnaissance%20Orbiter%20%28LRO%29/LOLA/GDR/GDRDEM.htm",
+      "units": "m",
+      "frame": "MOON_ME_DE421",
+      "reference": "radius_minus_1737400m",
+      "resolution_m": 1895.21,
+      "observation_period": "2009-07-13 to 2016-11-29",
+      "quality": "Approximate elevation at 16 pixels per degree (about 1.9 km at the equator). Local slope, roughness, and hazards require finer data."
+    },
+    "ice": {
+      "name": "NASA LOLA adjusted south-pole permanent shadow mask",
+      "path": "south_pole_psr_20m.tif",
+      "sha256": "47c80a13f6b1f5bf98771033325a3d0c9ec0085ca6e47d8b73fe3cd281c291ff",
+      "source_url": "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LPSR_80S_20MPP_ADJ.TIF",
+      "documentation": "https://pgda.gsfc.nasa.gov/products/90",
+      "product_id": "LPSR_80S_20MPP_ADJ",
+      "units": "fraction",
+      "frame": "MOON_ME_DE421",
+      "resolution_m": 20,
+      "projected_bounds_m": [
+        -70000.0,
+        -40000.0,
+        30000.0,
+        45000.0
+      ],
+      "interpretation": "psr_fraction",
+      "sampling": "neighbourhood_fraction",
+      "quality": "Native binary permanent-shadow mask. No ice concentration or detection is inferred."
+    },
+    "temperature_min_global": {
+      "name": "Diviner global historical bolometric minimum",
+      "path": "diviner_temperature_min_global.tif",
+      "sha256": "b9028e249e73e76682344e19c525d0763c4d773f0db95dda680e15e4426d8ebf",
+      "source_sha256": "da49b047f810722622b4f366cc6d06a7614224aa5c85be4f9fa8aebeac4b40f9",
+      "source_url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_raster_data/diviner_tbol_min.xyz",
+      "documentation": "https://www.diviner.ucla.edu/data",
+      "units": "K",
+      "resolution_m": 15161.4,
+      "observation_period": "2009-07-05 to 2015-04-01",
+      "quality": "Historical 0.5-degree grid (about 15 km at the equator). A regional temperature range, not a forecast or footprint measurement."
+    },
+    "temperature_max_global": {
+      "name": "Diviner global historical bolometric maximum",
+      "path": "diviner_temperature_max_global.tif",
+      "sha256": "e44c1d3fffa507204efde1501772265c6ade5ed0fff6561dfe6e440daa18f3ce",
+      "source_sha256": "54c12e409160bafe91681acef253e989dfe89a2b8c089e408757e709f1f6485e",
+      "source_url": "https://luna1.diviner.ucla.edu/~jpierre/diviner/level4_raster_data/diviner_tbol_max.xyz",
+      "documentation": "https://www.diviner.ucla.edu/data",
+      "units": "K",
+      "resolution_m": 15161.4,
+      "observation_period": "2009-07-05 to 2015-04-01",
+      "quality": "Historical 0.5-degree grid (about 15 km at the equator). A regional temperature range, not a forecast or footprint measurement."
+    },
+    "kaguya_dem": {
+      "name": "ISAS/JAXA Kaguya SLDEM2013 (local LOLA alignment)",
+      "path": "kaguya_s74e145_local.tif",
+      "units": "m",
+      "frame": "MOON_ME_DE421",
+      "reference": "radius_minus_1737400m",
+      "resolution_m": 10,
+      "source_url": "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-sldem2013-v1.0/lon145/data/DTM_MAP_01_S74E145S75E146SC.img",
+      "label_url": "https://data.darts.isas.jaxa.jp/pub/pds3/sln-l-tc-5-sldem2013-v1.0/lon145/data/DTM_MAP_01_S74E145S75E146SC.lbl",
+      "documentation": "https://darts.isas.jaxa.jp/en/datasets/sln-l-tc-5-sldem2013-v1.0",
+      "alignment_reference": "https://pgda.gsfc.nasa.gov/products/90",
+      "source_sha256": "8d33b887d92adbeb99bfbb9b2f76adb5332cab4146b767ff528990314885fe98",
+      "sha256": "a2a8d8abf68dcf09f369142089085bbda01e09846099f26d46509ecf05dafd74",
+      "processing": "Local 2 km crop aligned to adjusted 60 m LOLA. Applied -25 m x and +10 m y in the south polar projection and -1.81 m in height. Bilinearly resampled to a local 10 m grid.",
+      "quality": "Preliminary terrain screening. Agreement with 60 m LOLA does not independently validate footprint slopes or small hazards."
+    }
+  },
+  "missing": {}
+}
