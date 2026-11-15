@@ -92,7 +92,6 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
   equipment?: SolarSettings;
   singleMission?: boolean;
 }) {
-  const [preferred, setPreferred] = useState("");
   const [baselineKey, setBaselineKey] = useState("");
   const planned = [mission, ...alternatives.map((site) => ({ ...mission, ...site }))];
   const entries = [
@@ -107,8 +106,6 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
   ];
   const complete = entries.flatMap(({ assessment }) => assessment ? [assessment] : []);
   if (!complete.length || (!singleMission && entries.length < 2)) return null;
-  const eligible = complete.filter((r) => !r.constraints_failed.length);
-  const choice = eligible.find((r) => missionKey(r.mission) === preferred);
   const evidence = complete.find((r) => missionKey(r.mission) === evidenceSite) ?? complete[0];
   const locationName = (point: Mission) => siteLocationName(point, locationReference);
   const label = (point: Mission) => {
@@ -230,7 +227,7 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
           }}>Print or save PDF</button>
           <details><summary className="button subtle">Export</summary>
             <button className="button subtle" onClick={() => downloadReport(JSON.stringify({
-          schema_version: 1, mission, baseline: base.mission, solar_settings: equipment, preferred_site: choice?.mission ?? null, recommendation: advice,
+          schema_version: 1, mission, baseline: base.mission, solar_settings: equipment, preferred_site: null, recommendation: advice,
           sites: entries.map((entry) => ({
             site: { name: entry.mission.name, latitude: entry.mission.latitude, longitude: entry.mission.longitude },
             mission: entry.mission,
@@ -247,7 +244,7 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
         }, null, 2), "json")}>Export research JSON</button>
         <button className="button subtle" onClick={() => downloadReport([
           headers, ...grid, [], ["Comparison baseline", label(base.mission)],
-          ["Preferred point", choice ? label(choice.mission) : ""], ["Recommendation", advice],
+          ["Recommendation", advice],
         ].map((row) => row.map(csvCell).join(",")).join("\r\n"), "csv")}>Export comparison CSV</button>
           </details>
         </div>}
@@ -324,21 +321,6 @@ export default function ResearchComparisonReport({ mission, alternatives, compar
         )}
         <p>Nominal evidence coverage describes the inputs available for scoring. Landing safety requires separate verification.</p>
         <p>Historical temperatures describe previous observations. Permanent shadow can preserve ice, whose presence remains unconfirmed.</p>
-      <label className="research-preferred">Preferred point for further study
-        <select value={choice ? preferred : ""} onChange={(event) => setPreferred(event.target.value)}>
-          <option value="">Select an assessed point</option>
-          {eligible.map((r) => <option key={missionKey(r.mission)} value={missionKey(r.mission)}>{label(r.mission)}</option>)}
-        </select>
-      </label>
-      {choice && <p><strong>{label(choice.mission)}</strong> selected for further study.</p>}
-      </section>
-      <section className="report-panel">
-        <h3>Questions for further study</h3>
-        <ul>{complete.flatMap((r) => [
-          ...(!r.terrain.available ? ["Can local terrain measurements be obtained?"] : []),
-          ...(!r.temperature.available ? ["Can historical temperature coverage be verified?"] : []),
-          ...(!r.hazards?.available ? ["Can boulder and crater hazards be assessed?"] : []),
-        ].map((question) => <li key={missionKey(r.mission) + question}><strong>{label(r.mission)}</strong> · {question}</li>))}</ul>
       </section>
       <details className="report-panel" open>
         <summary>Visibility timelines</summary>

@@ -136,19 +136,19 @@ export default function PowerMissionLab({ onAiContextChange, source, onResult, o
     <header className="power-lab-title">
       <div><h1>Mission Planner.</h1><p>Can my lander keep operating through this mission window?</p></div>
       <div className="account-actions">
-        <button className="button subtle" onClick={onResult}>Back to Result</button>
+        <button className="button subtle" onClick={onResult}>Back to Assessment</button>
         {source && <button className="button subtle" onClick={() => save(false)}>Save draft</button>}
       </div>
     </header>
     {currentResult && <article className="power-lab-panel">
       <p>{source ? "The open Planner draft uses a different assessment." : "A site assessment is ready to import."}</p>
       <p>{currentResult.mission.name} · {utc(currentResult.mission.start)} → {utc(currentResult.mission.end)}</p>
-      <button className="button primary" onClick={() => onUseCurrentResult(currentResult)}>Use current Result</button>
+      <button className="button primary" onClick={() => onUseCurrentResult(currentResult)}>Use current Assessment</button>
     </article>}
     {sourceError && <p role="alert" className="error">{sourceError}</p>}
     {source ? <>
       <article className="power-lab-panel power-lab-source">
-        <div className="power-lab-title"><strong>Imported from your Result</strong><button className="text-button" onClick={onResult}>View source Result ↗</button></div>
+        <div className="power-lab-title"><strong>Imported from your Assessment</strong><button className="text-button" onClick={onResult}>View source Assessment ↗</button></div>
         <dl>
           <div><dt>Research area name</dt><dd>{source.researchArea.name?.trim() || "Custom location"}</dd></div>
           <div><dt>Research area coordinates</dt><dd>{formatCoordinates(source.researchArea.latitude, source.researchArea.longitude)}</dd></div>
@@ -159,7 +159,7 @@ export default function PowerMissionLab({ onAiContextChange, source, onResult, o
         <p>{source.complete ? "Sunlight timeline available" : "Sunlight timeline incomplete"} · {source.assessment.geometry.series?.some((row) => typeof row.earth_visible === "boolean") ? "Earth-centre visibility available" : "Earth-centre visibility unavailable"} · {source.assessment.horizon.available ? "Terrain skyline available" : "Terrain skyline unavailable"} · {source.assessment.temperature.available ? "Historical temperatures available" : "Historical temperatures unavailable"} · {source.site.interval_minutes}-minute sampling</p>
         {source.coordinateMetadata.frame && <p>Coordinate frame · {source.coordinateMetadata.frame}{source.coordinateMetadata.datum && ` · ${source.coordinateMetadata.datum}`}</p>}
         {source.assessedAt && Number.isFinite(Date.parse(source.assessedAt)) && <p>Assessment timestamp · {utc(source.assessedAt)}</p>}
-        {source.resultId && <p>Result ID · {source.resultId}</p>}
+        {source.resultId && <p>Assessment ID · {source.resultId}</p>}
         <p>Planner uses the selected site, mission window, and visibility samples from Results. Set panel area, efficiency, and effective panel-plane irradiance for this simulation.</p>
         <button className="text-button" onClick={onConfigure}>Change site or dates</button>
       </article>
@@ -254,7 +254,7 @@ export default function PowerMissionLab({ onAiContextChange, source, onResult, o
       </section>
       <section className="power-lab-panel" id="power-lab-step-3" tabIndex={-1}>
         <h2>4. Mission report</h2>
-        <p>Includes the selected Result, assumptions, operations, and calculated power timeline.</p>
+        <p>Includes the selected Assessment, assumptions, operations, and calculated power timeline.</p>
         {source.assessment.missing?.length > 0 && <p>Missing source factors · {source.assessment.missing.join(", ")}</p>}
         {[...new Set([...(source.assessment.warnings ?? []), ...(source.assessment.constraints_failed ?? [])])].map((warning) => <p key={warning}>{warning}</p>)}
         {Object.entries(source.assessment.geometry.sources ?? {}).map(([body, metadata]) =>
@@ -274,6 +274,6 @@ export default function PowerMissionLab({ onAiContextChange, source, onResult, o
         </div>
         {notice && <p role="status">{notice}</p>}
       </section>
-    </> : !currentResult && <article className="power-lab-panel"><h2>Open a site assessment</h2><p>Open Mission Planner from a completed Result to use its site and mission timeline.</p><button className="button primary" onClick={onConfigure}>Configure a search</button></article>}
+    </> : !currentResult && <article className="power-lab-panel"><h2>Open a site assessment</h2><p>Open Mission Planner from a completed Assessment to use its site and mission timeline.</p><button className="button primary" onClick={onConfigure}>Configure a search</button></article>}
   </section>;
 }

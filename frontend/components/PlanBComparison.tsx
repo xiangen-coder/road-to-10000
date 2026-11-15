@@ -401,7 +401,8 @@ export default function PlanBComparison({
         </p>
         <p>
           NASA JPL predicts Sun and Earth positions for the selected UTC dates.
-          What IF ranks the calculated scores using the selected research focus.
+          Change date orders alternatives by overall research score, highest first.
+          Location searches use the selected research focus.
           Available terrain and solar energy evidence are shown with each option.
         </p>
       </details>

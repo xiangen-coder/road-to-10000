@@ -24,6 +24,7 @@ export default function NewsSidebar({ showAiPet, aiContext, signedIn, onSignIn, 
     [open, setOpen] = useState<Article | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiMinimized, setAiMinimized] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!panelOpen) return;
@@ -72,7 +73,7 @@ export default function NewsSidebar({ showAiPet, aiContext, signedIn, onSignIn, 
         {showAiPet && !aiOpen && (
           <button type="button" className="lunar-shortcut-placeholder"
             aria-label="Ask Lunar SI" aria-expanded={aiOpen} aria-controls="lunar-ai-popover"
-            onClick={() => { setPanelOpen(false); setOpen(null); setAiOpen((value) => !value); }}>
+            onClick={() => { setPanelOpen(false); setOpen(null); setAiMinimized(false); setAiOpen(true); }}>
             <LunarSpacecraft />
           </button>
         )}
@@ -95,6 +96,7 @@ export default function NewsSidebar({ showAiPet, aiContext, signedIn, onSignIn, 
       </div>
       {showAiPet && aiOpen && (
         <LunarAiPanel key={aiContext} context={aiContext} signedIn={signedIn} onSignIn={onSignIn}
+          minimized={aiMinimized} onMinimizedChange={setAiMinimized}
           options={planner ? {
             contextLabel: "Mission Planner + selected site",
             contextHelp: "When you send a question, Gemini receives the recent conversation, site assessment, power inputs, and any completed simulation and variant summaries.",

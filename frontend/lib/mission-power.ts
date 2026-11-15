@@ -32,7 +32,7 @@ export function adaptAssessment(assessment: Research, researchArea?: Mission, re
   if (!Number.isFinite(start) || !Number.isFinite(end) || !(end > start) || !Number.isFinite(site.latitude) ||
       Math.abs(site.latitude) > 90 || !Number.isFinite(site.longitude) || Math.abs(site.longitude) > 180 ||
       !Number.isInteger(site.interval_minutes) || site.interval_minutes <= 0) {
-    throw Error("The selected Result has invalid coordinates, dates or sampling settings.");
+    throw Error("The selected Assessment has invalid coordinates, dates or sampling settings.");
   }
   if (researchArea && (!Number.isFinite(researchArea.latitude) || Math.abs(researchArea.latitude) > 90 ||
       !Number.isFinite(researchArea.longitude) || Math.abs(researchArea.longitude) > 180)) {
@@ -60,7 +60,7 @@ export function adaptAssessment(assessment: Research, researchArea?: Mission, re
 export type LabSource = ReturnType<typeof adaptAssessment>;
 
 export function simulatePower(source: LabSource, inputs: PowerInputs, activities: Activity[]) {
-  if (!source.complete) throw Error("Open a Result with a complete sunlight timeline for the selected mission window.");
+  if (!source.complete) throw Error("Open an Assessment with a complete sunlight timeline for the selected mission window.");
   const power = Object.fromEntries(Object.entries(powerFields).map(([key, [label, unit, min, max]]) => {
     const raw = inputs[key as PowerKey]?.trim();
     if (!raw && optionalLimits.includes(key)) return [key, Infinity];

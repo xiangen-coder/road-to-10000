@@ -56,6 +56,7 @@ export default function Account({
   }, []);
 
   const [action, setAction] = useState<Action>("login");
+  const [checkingSession, setCheckingSession] = useState(true);
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -84,7 +85,10 @@ export default function Account({
     history.replaceState(null, "", url);
     void refresh()
       .catch((e) => setError(e.message))
-      .finally(() => setBusy(false));
+      .finally(() => {
+        setCheckingSession(false);
+        setBusy(false);
+      });
   }, []);
 
   async function run(task: () => Promise<void>) {
@@ -150,6 +154,12 @@ export default function Account({
       )}
     </>
   );
+
+  if (checkingSession) {
+    return <section className="panel account-panel" aria-label="Lunar account" aria-busy="true">
+      <p role="status">Connecting to your account…</p>
+    </section>;
+  }
 
   if (!user || recovery) {
     return (

@@ -80,7 +80,8 @@ test("adding three research sites shares the mission settings and exports their 
   await evidence.getByLabel("Site to inspect").selectOption({ label: "Shackleton backup B" });
   await expect(evidence).toContainText("Shackleton backup B");
   await expect(evidence.getByRole("region", { name: "Estimated solar generation" })).toContainText("Average power");
-  await page.getByLabel("Preferred point for further study").selectOption({ label: "Shackleton backup A" });
+  await expect(page.getByLabel("Preferred point for further study")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Questions for further study" })).toHaveCount(0);
   await page.getByLabel("Comparison baseline").selectOption({ label: "Shackleton backup A" });
   const report = page.locator("#research-report");
   await expect(report.getByText("Boulder and crater mapping is incomplete.", { exact: true })).toHaveCount(1);
@@ -230,6 +231,7 @@ test("Configure offers three references and carries a custom map point back", as
 test("header account dropdown supports saved searches and logout on desktop and mobile", async ({ page }) => {
   let signedIn = true;
   let shouldFail = true;
+  let pendingSession: Promise<void> | undefined;
   await page.addInitScript(() => {
     const start = "2026-10-01T00:00:00Z";
     const end = "2026-10-01T01:00:00Z";
@@ -250,6 +252,7 @@ test("header account dropdown supports saved searches and logout on desktop and 
       signedIn = false;
       return route.fulfill({ json: { ok: true } });
     }
+    await pendingSession;
     return route.fulfill({ json: { configured: true, user: signedIn ? { username: "Xiang En Lunar Navigator", email: "test@example.com" } : null } });
   });
   await page.route("**/api/account/history", (route) => route.fulfill({ json: { records: [] } }));
@@ -281,7 +284,16 @@ test("header account dropdown supports saved searches and logout on desktop and 
   await expect(account).toBeFocused();
   await expect(saved).toBeHidden();
   await account.click();
-  await saved.click();
+  let releaseSession!: () => void;
+  pendingSession = new Promise<void>((resolve) => { releaseSession = resolve; });
+  try {
+    await saved.click();
+    await expect(page.getByRole("status").filter({ hasText: "Connecting to your account" })).toBeVisible();
+    await expect(page.locator("form").getByLabel("Password", { exact: true })).toHaveCount(0);
+  } finally {
+    releaseSession();
+    pendingSession = undefined;
+  }
   await expect(page).toHaveURL(/#account$/);
   const results = page.getByRole("region", { name: "Saved results" });
   const reports = page.getByRole("region", { name: "Saved mission reports" });

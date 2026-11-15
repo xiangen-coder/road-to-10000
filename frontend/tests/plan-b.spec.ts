@@ -180,7 +180,11 @@ test("delay search samples then refines, ranks by score and preserves the origin
     expect(body.limits).toEqual(limits);
     expect(body.allow_remote_terrain).toBe(false);
     candidates.push(body.mission);
-    await route.fulfill({ json: { status: "evaluated", result: evidence({ ...body.mission, name: "Custom location" }, candidates.length) } });
+    const result = {
+      ...evidence({ ...body.mission, name: "Custom location" }, candidates.length),
+      constraints_failed: candidates.length > 10 ? ["Test constraint for a later date"] : [],
+    };
+    await route.fulfill({ json: { status: "evaluated", result } });
   });
   const plan = await openCompare(page);
   const original = page.getByRole("article", { name: /Highest-scoring point evaluated:/ });
@@ -204,6 +208,11 @@ test("delay search samples then refines, ranks by score and preserves the origin
   expect(candidates.some((mission) => mission.start.startsWith("2026-11-01"))).toBeTruthy();
   expectMissionSettings(candidates);
   await expect(plan.getByRole("table").first()).toContainText("2026-10-02 00:00:00 UTC");
+  const dateRows = plan.getByRole("table", { name: "Suggested plans" }).locator("tbody tr");
+  await expect(dateRows.first()).toContainText("Baseline");
+  const alternativeScores = (await dateRows.locator("td:nth-child(3)").allTextContents()).slice(1).map(parseFloat);
+  expect(alternativeScores).toHaveLength(candidates.length);
+  expect(alternativeScores).toEqual([...alternativeScores].sort((first, second) => second - first));
   const locationCells = plan.getByRole("table", { name: "Suggested plans" }).locator('tbody th[scope="row"]');
   for (const cell of await locationCells.all()) {
     await expect(cell).toContainText("Shackleton vicinity");
@@ -440,6 +449,12 @@ test("Change location reveals the initial ranked list two at a time", async ({ p
   expect(analysisRequests).toEqual([]);
   await page.getByRole("button", { name: "Ask Lunar SI" }).click();
   await expect(page.getByRole("heading", { name: "Lunar SI", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Minimize Lunar SI" }).click();
+  await picker.selectOption({ index: 0 });
+  await expect(page.getByRole("heading", { name: "Recommended ridge", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Restore Lunar SI" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lunar SI", exact: true })).toBeHidden();
+  await expect(picker).toBeFocused();
   await page.getByRole("button", { name: "New search", exact: true }).click();
   for (const name of ["Compare", "Assessment", "Mission Planner"]) {
     await expect(header.getByRole("link", { name, exact: true })).toBeDisabled();
@@ -454,7 +469,7 @@ test("retired map explorer bookmarks open Configure", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Find your next horizon." })).toHaveCount(0);
 });
 
-test("Mission Planner imports the Result and models a battery change", async ({ page }) => {
+test("Mission Planner imports the Assessment and models a battery change", async ({ page }) => {
   test.setTimeout(90000);
   await openCompare(page);
   await page.route("**/api/research/research-area", async (route) => {
@@ -476,7 +491,7 @@ test("Mission Planner imports the Result and models a battery change", async ({ 
   });
   await page.getByRole("navigation", { name: "Main navigation" })
     .getByRole("link", { name: "Mission Planner", exact: true }).click();
-  await expect(page.getByText("Imported from your Result")).toBeVisible();
+  await expect(page.getByText("Imported from your Assessment")).toBeVisible();
   await page.getByRole("button", { name: "Run power simulation" }).click();
   await expect(page.getByRole("region", { name: "Mission Planner" }).getByRole("alert")).toContainText("Enter effective incident irradiance (W/m²).");
   await page.getByRole("spinbutton", { name: "Effective incident irradiance" }).fill("1000");
@@ -493,7 +508,7 @@ test("Mission Planner imports the Result and models a battery change", async ({ 
   const report = JSON.parse(await readFile((await download.path())!, "utf8"));
   expect(report.simulation.generated).toBeCloseTo(9.072);
   expect(report.variant.power.battery).toBe("3");
-  await page.getByRole("button", { name: "Back to Result" }).click();
+  await page.getByRole("button", { name: "Back to Assessment" }).click();
   await expect(page.locator("#result-summary")).toBeVisible();
   expect(analysisRequests).toBe(0);
 });

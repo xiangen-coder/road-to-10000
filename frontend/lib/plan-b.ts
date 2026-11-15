@@ -152,6 +152,11 @@ export function comparableTerrain(original: Research, candidate: Research) {
 }
 
 export function rankOptions(options: PlanBOption[], priority: ResearchPriority, mode: PlanBMode) {
+  if (mode === "delay") {
+    return [...options].sort((a, b) =>
+      (b.result.score ?? -1) - (a.result.score ?? -1) ||
+      Date.parse(a.result.mission.start) - Date.parse(b.result.mission.start));
+  }
   const common = Object.keys(options[0]?.result.factors ?? {}).filter((key) =>
     options.every(({ result }) => result.factors[key]?.score != null));
   const score = (result: Research) => {
@@ -163,7 +168,7 @@ export function rankOptions(options: PlanBOption[], priority: ResearchPriority, 
   };
   return [...options].sort((a, b) =>
     Number(a.result.constraints_failed.length > 0) - Number(b.result.constraints_failed.length > 0) ||
-    (priority === "I" && mode !== "delay" ? (a.shadow_distance_m ?? Infinity) - (b.shadow_distance_m ?? Infinity) : 0) ||
+    (priority === "I" ? (a.shadow_distance_m ?? Infinity) - (b.shadow_distance_m ?? Infinity) : 0) ||
     score(b.result) - score(a.result) || Date.parse(a.result.mission.start) - Date.parse(b.result.mission.start));
 }
 

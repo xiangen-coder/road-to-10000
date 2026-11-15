@@ -22,17 +22,17 @@ test("three lunar sites with real ephemerides and report downloads", async ({ pa
     await picker.getByLabel("Longitude", { exact: true }).fill("0");
     await picker.getByRole("button", { name: "Add coordinates" }).click();
   }
-  const preferred = page.getByLabel("Preferred point for further study");
-  await expect(preferred.locator("option")).toHaveCount(4, { timeout: 45000 });
-  await preferred.selectOption({ label: "Shackleton vicinity" });
+  const baseline = page.getByLabel("Comparison baseline");
+  await expect(baseline.locator("option")).toHaveCount(3, { timeout: 45000 });
+  await baseline.selectOption({ label: "Shackleton vicinity" });
   for (const [button, extension] of [["Export research JSON", "json"], ["Export comparison CSV", "csv"]]) {
     const pending = page.waitForEvent("download");
     await page.getByRole("button", { name: button }).click();
     const download = await pending;
     const content = await readFile(await download.path(), "utf8");
     if (extension === "json") {
-      const result = JSON.parse(content) as { preferred_site: Mission; sites: { assessment: Research }[] };
-      expect(result.preferred_site.name).toBe("Shackleton vicinity");
+      const result = JSON.parse(content) as { baseline: Mission; sites: { assessment: Research }[] };
+      expect(result.baseline.name).toBe("Shackleton vicinity");
       const proof = result.sites.map(({ assessment: r }) => ({
         name: r.mission.name,
         geometry: r.geometry.available,

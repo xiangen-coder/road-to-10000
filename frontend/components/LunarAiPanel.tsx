@@ -23,12 +23,14 @@ type Props = {
   context: string;
   signedIn: boolean;
   onSignIn: () => void;
+  minimized: boolean;
+  onMinimizedChange: (value: boolean) => void;
   options?: Partial<Omit<typeof defaults, "suggestions">> & { suggestions?: readonly [string, string] };
 };
 
-export default function LunarAiPanel({ context, signedIn, onSignIn, options }: Props) {
+export default function LunarAiPanel({ context, signedIn, onSignIn, minimized, onMinimizedChange, options }: Props) {
   const copy = { ...defaults, ...options };
-  const [minimized, setMinimized] = useState(false);
+  const focusRestore = useRef(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [started, setStarted] = useState(false);
   const pill = useRef<HTMLButtonElement>(null);
@@ -46,9 +48,17 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
   }, []);
 
   useEffect(() => {
-    if (minimized) pill.current?.focus();
+    if (minimized) {
+      if (focusRestore.current) pill.current?.focus();
+      focusRestore.current = false;
+    }
     else input.current?.focus();
   }, [minimized]);
+
+  function minimize() {
+    focusRestore.current = true;
+    onMinimizedChange(true);
+  }
 
   useEffect(() => {
     if (scroll.current && started) scroll.current.scrollTop = scroll.current.scrollHeight;
@@ -99,7 +109,7 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
   }
 
   if (minimized) return (
-    <button className="lunar-ai-pill" ref={pill} type="button" onClick={() => setMinimized(false)}
+    <button className="lunar-ai-pill" ref={pill} type="button" onClick={() => onMinimizedChange(false)}
       aria-label="Restore Lunar SI" title="Restore Lunar SI">
       <LunarSpacecraft />
     </button>
@@ -110,14 +120,14 @@ export default function LunarAiPanel({ context, signedIn, onSignIn, options }: P
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.stopPropagation();
-          setMinimized(true);
+          minimize();
         }
       }}>
       <header className="lunar-ai-header">
         <span className="lunar-ai-spacecraft"><LunarSpacecraft size={38} /></span>
         <div><h2>Lunar SI</h2><p>Your mission, in context</p></div>
         <button type="button" aria-label="New conversation" title="New conversation" onClick={reset}><SquarePen size={16} /></button>
-        <button type="button" aria-label="Minimize Lunar SI" title="Minimize Lunar SI" onClick={() => setMinimized(true)}><Minus size={17} /></button>
+        <button type="button" aria-label="Minimize Lunar SI" title="Minimize Lunar SI" onClick={minimize}><Minus size={17} /></button>
       </header>
       <div className="lunar-ai-context">
         <Layers size={15} aria-hidden="true" /><span>{copy.contextLabel}</span>
