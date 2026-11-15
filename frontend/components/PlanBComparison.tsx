@@ -541,7 +541,7 @@ export default function PlanBComparison({
               {message}
             </p>
           )}
-          {status !== "idle" && (
+          {(status === "running" || incomplete) && (
             <div role="status" className="plan-b-progress">
               {status === "running" && (
                 <p>{progress.stage || "Preparing backup search…"}</p>
@@ -557,13 +557,6 @@ export default function PlanBComparison({
                   }
                 />
               )}
-              <p>
-                {progress.evaluated}{" "}
-                {progress.evaluated === 1 ? "option" : "options"} evaluated
-                {progress.unavailable > 0 &&
-                  ` · ${progress.unavailable} could not be evaluated`}
-                .
-              </p>
               {incomplete && (
                 <p>
                   Search incomplete
